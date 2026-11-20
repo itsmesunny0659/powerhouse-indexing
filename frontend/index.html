@@ -554,8 +554,25 @@
                                 <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-amber-300">FeedBurner</span>
                                 <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-emerald-300">Ping-O-Matic</span>
                                 <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-purple-300">PrePostSEO</span>
-                                <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-indigo-300">Twingly & Google Blog</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-indigo-300">Twingly & Blo.gs</span>
                             </div>
+                        </div>
+
+                        <!-- Direct FeedBurner Link Helper -->
+                        <div class="p-2.5 rounded-xl bg-slate-950/80 border border-purple-800/40 text-[11px] flex items-center justify-between">
+                            <div class="flex items-center space-x-2 truncate pr-2">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                <span class="text-slate-300 truncate font-semibold">FeedBurner Dashboard:</span>
+                                <span id="feedburner-active-feed" class="text-amber-400 font-mono truncate text-[10px]">http://localhost:8000/feed.xml</span>
+                            </div>
+                            <a 
+                                href="https://feedburner.google.com/" 
+                                target="_blank" 
+                                class="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-mono text-[10px] shrink-0 flex items-center space-x-1"
+                            >
+                                <span>+ Create Proxy</span>
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            </a>
                         </div>
 
                         <!-- Burst Submit Button -->
@@ -889,6 +906,12 @@
                 statusEl.innerText = "BURST DONE";
 
                 outputEl.innerText = JSON.stringify(data, null, 2);
+                if (data.politepaul_feeds_generated && data.politepaul_feeds_generated.length > 0) {
+                    const firstFeed = data.politepaul_feeds_generated[0].politepaul_feed_url;
+                    if (firstFeed) {
+                        document.getElementById('feedburner-active-feed').innerText = firstFeed;
+                    }
+                }
                 appendTerminalLog("SUCCESS", `[PolitePaul 10x Burst] Completed for ${urls.length} URLs (${data.ping_burst?.total_pings_sent || 0} total pings dispatched in ${elapsedMs}ms)`);
                 fetchGlobalStats();
             } catch (e) {
