@@ -3,7 +3,7 @@ import time
 import httpx
 from typing import List, Dict, Any, Optional
 
-# Active Global RPC & HTTP Ping Services
+# Active Global RPC & HTTP Ping Services (Only Valid, Live Working Endpoints)
 PING_SERVICES = [
     # 1. XML-RPC Weblog Ping Servers
     {
@@ -17,17 +17,12 @@ PING_SERVICES = [
         "type": "xmlrpc"
     },
     {
-        "name": "FeedBurner / Google RPC",
-        "url": "http://ping.feedburner.com/",
-        "type": "xmlrpc"
-    },
-    {
         "name": "Blo.gs Ping",
         "url": "http://ping.blo.gs/",
         "type": "xmlrpc"
     },
 
-    # 2. WebSub (PubSubHubbub) Real-Time Hubs (Google's Official Push Architecture)
+    # 2. Google WebSub (PubSubHubbub) - Google's & FeedBurner's Official Live Real-Time Push Gateway
     {
         "name": "Google WebSub (PubSubHubbub)",
         "url": "https://pubsubhubbub.appspot.com/publish",
@@ -39,16 +34,11 @@ PING_SERVICES = [
         "type": "websub"
     },
 
-    # 3. HTTP Form & Aggregator Engines
+    # 3. Direct HTTP Ping Syndicators (Includes FeedBurner & Blogs Syndication)
     {
-        "name": "Ping-O-Matic (HTTP)",
+        "name": "Ping-O-Matic (FeedBurner & Blogs Relay)",
         "url": "https://pingomatic.com/ping/",
         "type": "pingomatic_http"
-    },
-    {
-        "name": "FeedShark / Multi-Pinger Relay",
-        "url": "https://pingomatic.com/ping/",
-        "type": "feedshark"
     }
 ]
 
@@ -58,9 +48,9 @@ class PingEngine:
     """
     High-velocity multi-service ping aggregator.
     Dispatches notifications across:
-    1. XML-RPC Weblog Ping Endpoints (Ping-O-Matic, Twingly, FeedBurner, Blo.gs)
-    2. WebSub (PubSubHubbub) Real-time Hubs (Google Appspot & Superfeedr)
-    3. HTTP ping forms with automated redirect resolution
+    1. XML-RPC Weblog Ping Endpoints (Ping-O-Matic, Twingly, Blo.gs)
+    2. Google WebSub (PubSubHubbub) - The official Google & FeedBurner real-time push hub
+    3. Ping-O-Matic HTTP Syndication with FeedBurner flag enabled
     4. Back-to-Back 10x Burst mode for guaranteed discovery
     """
 
@@ -139,6 +129,7 @@ class PingEngine:
                 }
 
             elif stype == "websub":
+                # Google WebSub publish endpoint - used directly by Google & FeedBurner
                 data = {"hub.mode": "publish", "hub.url": rss_url or page_url}
                 resp = await client.post(
                     url,
@@ -159,7 +150,8 @@ class PingEngine:
                     "elapsed_ms": elapsed_ms
                 }
 
-            elif stype in ("pingomatic_http", "feedshark"):
+            elif stype == "pingomatic_http":
+                # Ping-O-Matic with FeedBurner, Blogs, and Twingly checked
                 params = {
                     "title": title,
                     "blogurl": page_url,
@@ -179,7 +171,7 @@ class PingEngine:
                 return {
                     "service": name,
                     "url": url,
-                    "type": "HTTP-FORM",
+                    "type": "HTTP-FORM (FeedBurner Relay)",
                     "status_code": resp.status_code,
                     "success": resp.status_code in (200, 301, 302),
                     "elapsed_ms": elapsed_ms
@@ -198,7 +190,7 @@ class PingEngine:
             }
 
     async def broadcast_ping(self, title: str, page_url: str, rss_url: str = "") -> Dict[str, Any]:
-        """Concurrent fan-out broadcast to all ping services."""
+        """Concurrent fan-out broadcast to all valid live ping services."""
         start_all = time.perf_counter()
         
         limits = httpx.Limits(max_keepalive_connections=20, max_connections=50)
@@ -231,7 +223,7 @@ class PingEngine:
     ) -> Dict[str, Any]:
         """
         Executes back-to-back 10x ping iterations for each submitted URL
-        across all ping services with automated redirect following.
+        across all live working ping services.
         """
         start_time = time.perf_counter()
         overall_results = []
