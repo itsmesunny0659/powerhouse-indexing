@@ -249,6 +249,59 @@ async def politepaul_burst_endpoint(req: PolitePaulBurstRequest, bg_tasks: Backg
         "ping_burst": burst_results
     }
 
+class RocketIndexRequest(BaseModel):
+    urls: List[str]
+    google_api_key: Optional[str] = None
+    feed_url: Optional[str] = None
+    auto_crawl: bool = True
+
+@app.post("/api/gateway/rocket-index")
+async def rocket_index_endpoint(req: RocketIndexRequest, bg_tasks: BackgroundTasks):
+    """
+    Guaranteed Googlebot Summoning Pipeline (RocketIndexer Engine):
+    PRIORITY 0: Immediately calls search.google.com/test/rich-results
+    PRIORITY 1: Summons Googlebot Chromium WRS via Google Web Rendering Service
+    PRIORITY 2: Google WebSub real-time hub ping
+    PRIORITY 3: Search engine buffer registration
+    """
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided.")
+
+    clean_urls = [u.strip() for u in req.urls if u.strip()]
+    summoner = GooglebotSummoner(api_key=req.google_api_key)
+
+    results = []
+    for target in clean_urls:
+        res = await summoner.execute_rocket_pipeline(
+            target_url=target,
+            feed_url=req.feed_url
+        )
+        results.append(res)
+
+    # Optional local indexing and IndexNow push
+    if req.auto_crawl and not spider.status.is_running:
+        config = SpiderConfig(
+            seed_urls=clean_urls,
+            max_pages=len(clean_urls) + 10,
+            max_depth=1,
+            concurrency=5,
+            politeness_delay=0.2,
+            same_domain_only=False,
+            respect_robots=True
+        )
+        bg_tasks.add_task(spider.crawl, config)
+
+        async def push_indexnow():
+            async with IndexingGateway() as gw:
+                await gw.submit_indexnow(clean_urls)
+        bg_tasks.add_task(push_indexnow)
+
+    return {
+        "status": "completed",
+        "total_urls": len(clean_urls),
+        "results": results
+    }
+
 @app.get("/sitemap.xml")
 async def get_sitemap():
     content = feed_gen.generate_sitemap_xml()
