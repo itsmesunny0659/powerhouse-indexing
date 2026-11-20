@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApexSearch — High-Tech Web Crawler & Indexing Engine</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            50: '#f0fdf4',
+                            500: '#10b981',
+                            900: '#064e3b',
+                            dark: '#0b0f17',
+                            card: '#111827',
+                            border: '#1f2937',
+                            accent: '#38bdf8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0f17; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+        .glow-accent {
+            box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.25);
+        }
+    </style>
+</head>
+<body class="bg-[#090d14] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-[#0c121d]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-sky-500/20 font-black text-white text-lg">
+                Λ
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-lg font-extrabold tracking-tight bg-gradient-to-r from-sky-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">ApexSearch</span>
+                    <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-sky-950/80 text-sky-400 border border-sky-800/50">Core Engine</span>
+                </div>
+                <p class="text-[11px] text-slate-400 -mt-0.5">Asynchronous Crawler &bull; Inverted Index &bull; BM25 &bull; PageRank</p>
+            </div>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="flex items-center p-1 bg-slate-900/90 rounded-xl border border-slate-800">
+            <button onclick="switchTab('search')" id="tab-btn-search" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-2 bg-sky-500 text-white shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <span>Search</span>
+            </button>
+            <button onclick="switchTab('crawler')" id="tab-btn-crawler" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-150 flex items-center space-x-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <span>Spider Lab</span>
+            </button>
+            <button onclick="switchTab('index')" id="tab-btn-index" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-150 flex items-center space-x-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span>Index Explorer</span>
+            </button>
+            <button onclick="switchTab('graph')" id="tab-btn-graph" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-150 flex items-center space-x-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                <span>PageRank Graph</span>
+            </button>
+            <button onclick="switchTab('gateway')" id="tab-btn-gateway" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-amber-400 hover:text-amber-300 transition-all duration-150 flex items-center space-x-2 border border-amber-500/30 bg-amber-950/20">
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span>Instant Gateway</span>
+            </button>
+        </div>
+
+        <!-- System Stats Quick Pill -->
+        <div class="flex items-center space-x-3 text-xs">
+            <div class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-slate-400">Indexed:</span>
+                <span id="header-indexed-count" class="font-bold text-emerald-400 font-mono">0</span>
+            </div>
+            <div class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg">
+                <span class="text-slate-400">Terms:</span>
+                <span id="header-terms-count" class="font-bold text-sky-400 font-mono">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6">
+
+        <!-- ==================== TAB 1: SEARCH ==================== -->
+        <section id="view-search" class="space-y-6">
+            <!-- Google-Style High-Tech Search Bar -->
+            <div class="max-w-3xl mx-auto pt-6 text-center space-y-4">
+                <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                    Search the <span class="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">Apex Index</span>
+                </h1>
+                <p class="text-sm text-slate-400">BM25 probabilistic relevance score combined with PageRank link authority.</p>
+
+                <div class="relative mt-4">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Search crawled web pages (e.g., python, machine learning, api)..."
+                        class="w-full pl-11 pr-28 py-3.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 text-slate-100 placeholder-slate-500 text-sm outline-none transition-all duration-200 shadow-xl"
+                        onkeydown="if(event.key === 'Enter') performSearch()"
+                    >
+                    <div class="absolute inset-y-0 right-2 flex items-center space-x-1.5">
+                        <button 
+                            onclick="performSearch()"
+                            class="px-4 py-2 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 text-white rounded-xl text-xs font-semibold shadow-md transition-all duration-150 flex items-center space-x-1"
+                        >
+                            <span>Search</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Query Telemetry -->
+                <div id="search-meta" class="hidden text-xs text-slate-500 flex items-center justify-center space-x-3">
+                    <span>Found <strong id="search-total-hits" class="text-slate-300">0</strong> results</span>
+                    <span>&bull;</span>
+                    <span>Latency: <strong id="search-execution-time" class="text-emerald-400 font-mono">0ms</strong></span>
+                </div>
+            </div>
+
+            <!-- Results List -->
+            <div id="search-results-container" class="max-w-3xl mx-auto space-y-4 pt-4">
+                <!-- Placeholder / Empty state -->
+                <div id="search-empty-state" class="text-center py-16 text-slate-500 border border-dashed border-slate-800 rounded-2xl">
+                    <svg class="w-12 h-12 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <p class="text-sm font-medium">No search queries executed yet.</p>
+                    <p class="text-xs text-slate-600 mt-1">Crawl a few websites in the "Spider Lab" tab, then search above!</p>
+                </div>
+
+                <div id="search-results-list" class="space-y-4 hidden"></div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: SPIDER LAB ==================== -->
+        <section id="view-crawler" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Configuration Column (5 cols) -->
+                <div class="lg:col-span-5 space-y-5">
+                    <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-bold tracking-tight text-white flex items-center space-x-2">
+                                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                                <span>Crawl Target & Seeds</span>
+                            </h2>
+                            <span class="text-[11px] text-slate-400">Multiple URLs allowed</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Seed URLs (one per line):</label>
+                            <textarea 
+                                id="crawl-seeds" 
+                                rows="3" 
+                                class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
+                                placeholder="https://example.com&#10;https://docs.python.org/3/"
+                            >https://example.com</textarea>
+                        </div>
+
+                        <!-- Sliders -->
+                        <div class="space-y-3 pt-2">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">Max Pages Cap:</span>
+                                    <span id="val-max-pages" class="font-mono text-sky-400 font-semibold">25</span>
+                                </div>
+                                <input type="range" id="crawl-max-pages" min="5" max="150" step="5" value="25" class="w-full accent-sky-500 cursor-pointer" oninput="document.getElementById('val-max-pages').innerText = this.value">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">Max Depth (Hops):</span>
+                                    <span id="val-max-depth" class="font-mono text-sky-400 font-semibold">2</span>
+                                </div>
+                                <input type="range" id="crawl-max-depth" min="0" max="4" step="1" value="2" class="w-full accent-sky-500 cursor-pointer" oninput="document.getElementById('val-max-depth').innerText = this.value">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">Worker Concurrency:</span>
+                                    <span id="val-concurrency" class="font-mono text-sky-400 font-semibold">3</span>
+                                </div>
+                                <input type="range" id="crawl-concurrency" min="1" max="8" step="1" value="3" class="w-full accent-sky-500 cursor-pointer" oninput="document.getElementById('val-concurrency').innerText = this.value">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">Politeness Delay:</span>
+                                    <span id="val-delay" class="font-mono text-sky-400 font-semibold">0.5s</span>
+                                </div>
+                                <input type="range" id="crawl-delay" min="0.1" max="3.0" step="0.1" value="0.5" class="w-full accent-sky-500 cursor-pointer" oninput="document.getElementById('val-delay').innerText = this.value + 's'">
+                            </div>
+                        </div>
+
+                        <!-- Toggles -->
+                        <div class="pt-2 border-t border-slate-800 space-y-2">
+                            <label class="flex items-center justify-between text-xs cursor-pointer py-1">
+                                <span class="text-slate-300">Stay within domain (same_domain_only)</span>
+                                <input type="checkbox" id="crawl-same-domain" checked class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-sky-500 accent-sky-500">
+                            </label>
+                            <label class="flex items-center justify-between text-xs cursor-pointer py-1">
+                                <span class="text-slate-300">Strict robots.txt enforcement</span>
+                                <input type="checkbox" id="crawl-respect-robots" checked class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-sky-500 accent-sky-500">
+                            </label>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-3 flex space-x-2">
+                            <button 
+                                id="btn-start-crawl"
+                                onclick="startCrawl()"
+                                class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-semibold text-xs shadow-lg shadow-emerald-500/20 transition-all duration-150 flex items-center justify-center space-x-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Start Crawling</span>
+                            </button>
+                            <button 
+                                id="btn-stop-crawl"
+                                onclick="stopCrawl()"
+                                disabled
+                                class="py-2.5 px-4 rounded-xl bg-slate-800 text-slate-500 font-semibold text-xs border border-slate-700 transition-all duration-150 disabled:opacity-50 cursor-pointer"
+                            >
+                                Stop
+                            </button>
+                            <button 
+                                onclick="clearDatabase()"
+                                class="py-2.5 px-3 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 font-semibold text-xs transition-all duration-150"
+                                title="Reset Search Engine Database"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Live Stream & Terminal Column (7 cols) -->
+                <div class="lg:col-span-7 space-y-5">
+                    <!-- Status Cards -->
+                    <div class="grid grid-cols-4 gap-3">
+                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 uppercase font-semibold">Status</span>
+                            <div class="mt-1 flex items-center justify-center space-x-1.5">
+                                <span id="spider-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                                <span id="spider-status-text" class="text-xs font-bold text-slate-300">IDLE</span>
+                            </div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 uppercase font-semibold">Crawled</span>
+                            <div id="stat-pages-crawled" class="mt-1 text-sm font-bold font-mono text-emerald-400">0</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 uppercase font-semibold">Indexed</span>
+                            <div id="stat-pages-indexed" class="mt-1 text-sm font-bold font-mono text-sky-400">0</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 uppercase font-semibold">Queue</span>
+                            <div id="stat-queue-size" class="mt-1 text-sm font-bold font-mono text-amber-400">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Current URL Ticker -->
+                    <div class="px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs flex items-center space-x-2 truncate">
+                        <span class="text-slate-500 font-semibold shrink-0">Current Target:</span>
+                        <span id="spider-current-target" class="font-mono text-slate-300 truncate">None</span>
+                    </div>
+
+                    <!-- Terminal Logs Console -->
+                    <div class="rounded-2xl bg-black border border-slate-800 overflow-hidden flex flex-col h-80">
+                        <div class="px-4 py-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="flex space-x-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                                </div>
+                                <span class="text-[11px] font-mono text-slate-400 ml-2">crawler_pipeline.log</span>
+                            </div>
+                            <button onclick="clearTerminalLogs()" class="text-[10px] text-slate-500 hover:text-slate-300 font-mono">Clear</button>
+                        </div>
+                        <div id="terminal-logs" class="flex-1 p-3 overflow-y-auto font-mono text-[11px] space-y-1">
+                            <div class="text-slate-600">// Engine initialized. Waiting for crawl mission...</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: INDEX EXPLORER ==================== -->
+        <section id="view-index" class="hidden space-y-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold">Inverted Index Database</h2>
+                    <p class="text-xs text-slate-400">Inspect indexed documents, word distributions, and raw records.</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input 
+                        type="text" 
+                        id="index-search-filter" 
+                        placeholder="Filter documents..."
+                        class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 outline-none focus:border-sky-500"
+                        oninput="loadIndexedDocuments(1)"
+                    >
+                    <button onclick="loadIndexedDocuments(1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg text-slate-200">
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Documents Table -->
+            <div class="rounded-2xl bg-slate-900/80 border border-slate-800 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">ID</th>
+                                <th class="p-3.5">Title & URL</th>
+                                <th class="p-3.5 text-center">Words</th>
+                                <th class="p-3.5 text-center">PageRank</th>
+                                <th class="p-3.5">Crawled At</th>
+                                <th class="p-3.5 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="index-table-body" class="divide-y divide-slate-800/60 font-mono">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="index-pagination" class="p-3 bg-slate-950/50 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span id="index-pagination-info">Showing 0 documents</span>
+                    <div class="space-x-1" id="index-pagination-buttons"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: PAGERANK GRAPH ==================== -->
+        <section id="view-graph" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold">Google PageRank & Link Graph</h2>
+                    <p class="text-xs text-slate-400">Hyperlink connectivity matrix and authority score convergence.</p>
+                </div>
+                <button 
+                    onclick="triggerPageRankRecalc()" 
+                    class="px-3 py-1.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-xs font-semibold rounded-lg text-white shadow-md flex items-center space-x-1.5"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>Recalculate PageRank</span>
+                </button>
+            </div>
+
+            <!-- Canvas Visualization -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-8 rounded-2xl bg-slate-950 border border-slate-800 p-4 flex flex-col h-[480px] relative">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-400">Directed Web Graph Visualization</span>
+                        <span class="text-[10px] text-slate-500">Node radius = PageRank</span>
+                    </div>
+                    <canvas id="graph-canvas" class="flex-1 w-full rounded-xl bg-slate-900/50"></canvas>
+                </div>
+
+                <!-- Top Ranked Pages Leaderboard -->
+                <div class="lg:col-span-4 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 space-y-3">
+                    <h3 class="text-xs uppercase font-bold text-slate-400 tracking-wider">Top PageRank Scores</h3>
+                    <div id="pagerank-leaderboard" class="space-y-2 overflow-y-auto max-h-[420px] text-xs">
+                        <div class="text-slate-500 text-center py-6">No graph data yet.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: INSTANT GATEWAY ==================== -->
+        <section id="view-gateway" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <h2 class="text-xl font-extrabold tracking-tight">Instant Handshake Gateway</h2>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-400 border border-amber-800/50">Multi-Protocol</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">Bulk submission via IndexNow (Bing, Yandex, Yahoo) & Google WebSub PubSubHubbub</p>
+                </div>
+
+                <!-- Feed & Export Quick Actions -->
+                <div class="flex items-center space-x-2 text-xs">
+                    <a href="/sitemap.xml" target="_blank" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 rounded-lg flex items-center space-x-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                        <span>sitemap.xml</span>
+                    </a>
+                    <a href="/feed.xml" target="_blank" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800 rounded-lg flex items-center space-x-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+                        <span>RSS Feed</span>
+                    </a>
+                    <a href="/api/export/csv" class="px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-800/50 rounded-lg flex items-center space-x-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Export CSV</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Two Column Dispatch Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Bulk Submission Form (6 cols) -->
+                <div class="lg:col-span-6 space-y-4">
+                    <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-300">Target URLs (1 to 10,000 URLs per batch)</span>
+                            <span id="gateway-url-counter" class="text-[11px] font-mono text-sky-400">0 URLs detected</span>
+                        </div>
+
+                        <textarea 
+                            id="gateway-urls" 
+                            rows="7" 
+                            class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-100 placeholder-slate-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none leading-relaxed"
+                            placeholder="https://example.com/page-1&#10;https://third-party-site.org/resource&#10;https://target-domain.com/blog/new-post"
+                            oninput="updateGatewayUrlCount()"
+                        ></textarea>
+
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block text-[11px] text-slate-400 font-semibold mb-1">Host Domain:</label>
+                                <input 
+                                    type="text" 
+                                    id="gateway-host" 
+                                    value="indexing-gateway.local" 
+                                    class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 outline-none focus:border-amber-500 font-mono"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-400 font-semibold mb-1">Verification API Key:</label>
+                                <input 
+                                    type="text" 
+                                    id="gateway-key" 
+                                    value="e4d909c290d0fb1ca068ffaddf22cbd0" 
+                                    class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 outline-none focus:border-amber-500 font-mono truncate"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Protocol Checkboxes -->
+                        <div class="pt-2 border-t border-slate-800 space-y-2 text-xs">
+                            <label class="flex items-center justify-between cursor-pointer py-1">
+                                <span class="text-slate-300">IndexNow Protocol (Bing, Yandex, Seznam, Naver)</span>
+                                <input type="checkbox" id="chk-indexnow" checked class="w-4 h-4 rounded text-amber-500 accent-amber-500">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer py-1">
+                                <span class="text-slate-300">Google WebSub Hub Broadcast (PubSubHubbub)</span>
+                                <input type="checkbox" id="chk-websub" checked class="w-4 h-4 rounded text-amber-500 accent-amber-500">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer py-1">
+                                <span class="text-slate-300">Global Ping Cluster (FeedBurner, Ping-O-Matic, Twingly)</span>
+                                <input type="checkbox" id="chk-ping-cluster" checked class="w-4 h-4 rounded text-amber-500 accent-amber-500">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer py-1">
+                                <span class="text-slate-300">Instant Local Crawl & Inverted Index Ingestion</span>
+                                <input type="checkbox" id="chk-local-crawl" checked class="w-4 h-4 rounded text-amber-500 accent-amber-500">
+                            </label>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-1 flex space-x-2">
+                            <button 
+                                id="btn-gateway-dispatch"
+                                onclick="dispatchGatewayBatch()"
+                                class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-xs shadow-lg shadow-amber-500/20 transition-all duration-150 flex items-center justify-center space-x-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                <span>Dispatch Standard Batch</span>
+                            </button>
+                            <button 
+                                onclick="manualPingBroadcast()"
+                                class="py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs border border-amber-500/30 transition-all duration-150 flex items-center space-x-1"
+                                title="Broadcast Pings only (FeedBurner, Ping-O-Matic, WebSub)"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                <span>Ping Only</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PolitePaul + 10x Ping Burst Card -->
+                    <div class="p-5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-purple-950/30 to-slate-900 border border-purple-800/40 space-y-4 shadow-xl">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse"></span>
+                                <h3 class="text-xs font-bold text-purple-200 uppercase tracking-wider">PolitePaul XML + 10x Ping Burst</h3>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-300 font-mono border border-purple-700/50">Auto-Syndication</span>
+                        </div>
+
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            URLs are first submitted to <strong>PolitePaul.com</strong> to generate dedicated XML/RSS feeds, followed by <strong>10 consecutive back-to-back ping bursts</strong> across FeedBurner, PubSubHubbub, PrePostSEO, and Ping-O-Matic.
+                        </p>
+
+                        <!-- Credentials Grid -->
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block text-[10px] text-purple-300 font-semibold mb-1">PolitePaul Email / Username:</label>
+                                <input 
+                                    type="text" 
+                                    id="pp-email" 
+                                    value="its.me.sunny.0659@gmail.com" 
+                                    class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-purple-800/50 text-xs text-slate-200 outline-none focus:border-purple-400 font-mono"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-purple-300 font-semibold mb-1">Password:</label>
+                                <input 
+                                    type="password" 
+                                    id="pp-password" 
+                                    value="@Support9267" 
+                                    class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-purple-800/50 text-xs text-slate-200 outline-none focus:border-purple-400 font-mono"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs pt-1">
+                            <span class="text-slate-300">Repeat Ping Count per URL:</span>
+                            <span id="pp-repeat-val" class="font-mono text-purple-400 font-bold px-2 py-0.5 rounded bg-purple-950 border border-purple-800">10x Rounds</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="pp-repeat-count" 
+                            min="3" 
+                            max="20" 
+                            step="1" 
+                            value="10" 
+                            class="w-full accent-purple-500 cursor-pointer"
+                            oninput="document.getElementById('pp-repeat-val').innerText = this.value + 'x Rounds'"
+                        >
+
+                        <!-- Ping Target Badges -->
+                        <div class="text-[10px] text-slate-400 space-y-1">
+                            <div class="font-semibold text-slate-300">Target Ping Services (Hit 10x sequentially):</div>
+                            <div class="flex flex-wrap gap-1.5 font-mono">
+                                <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-sky-300">PubSubHubbub</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-amber-300">FeedBurner</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-emerald-300">Ping-O-Matic</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-purple-300">PrePostSEO</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-indigo-300">Twingly & Google Blog</span>
+                            </div>
+                        </div>
+
+                        <!-- Burst Submit Button -->
+                        <button 
+                            id="btn-pp-burst"
+                            onclick="executePolitePaulBurst()"
+                            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-extrabold text-xs shadow-lg shadow-purple-600/30 transition-all duration-150 flex items-center justify-center space-x-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span>Execute PolitePaul XML + 10x Ping Burst</span>
+                        </button>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Right: Telemetry & Protocol Handshake Result (6 cols) -->
+                <div class="lg:col-span-6 space-y-4">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Dispatched</span>
+                            <div id="stat-gateway-count" class="mt-1 text-sm font-bold font-mono text-amber-400">0</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Latency</span>
+                            <div id="stat-gateway-latency" class="mt-1 text-sm font-bold font-mono text-sky-400">0ms</div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Status</span>
+                            <div id="stat-gateway-status" class="mt-1 text-xs font-bold font-mono text-emerald-400">STANDBY</div>
+                        </div>
+                    </div>
+
+                    <!-- Live JSON Telemetry Output -->
+                    <div class="rounded-2xl bg-black border border-slate-800 overflow-hidden flex flex-col h-80">
+                        <div class="px-4 py-2 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <span class="text-[11px] font-mono text-slate-400">protocol_handshake_response.json</span>
+                            <span id="gateway-badge-time" class="text-[10px] font-mono text-slate-500">Live Telemetry</span>
+                        </div>
+                        <div class="flex-1 p-3.5 overflow-y-auto">
+                            <pre id="gateway-telemetry-output" class="font-mono text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">// Ready for batch dispatch.
+// Submit URLs on the left to initiate multi-engine handshake protocol.</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Document Detail Inspector Modal -->
+    <div id="doc-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+                <h3 id="modal-title" class="font-bold text-sm text-slate-100 truncate pr-4">Document Details</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4 text-xs font-mono">
+                <div>
+                    <span class="text-slate-400 font-semibold block mb-1">URL:</span>
+                    <a id="modal-url" href="#" target="_blank" class="text-sky-400 hover:underline break-all"></a>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-semibold block mb-1">Description:</span>
+                    <p id="modal-description" class="text-slate-300 font-sans"></p>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-semibold block mb-1">Top Inverted Index Terms (TF):</span>
+                    <div id="modal-terms" class="flex flex-wrap gap-1.5"></div>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-semibold block mb-1">Outgoing Links (<span id="modal-links-count">0</span>):</span>
+                    <div id="modal-links" class="max-h-36 overflow-y-auto space-y-1 bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px]"></div>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-semibold block mb-1">Clean Extracted Text Preview:</span>
+                    <div id="modal-text" class="p-3 bg-slate-950 rounded-lg text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto font-sans leading-relaxed text-[11px]"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frontend Engine Controller Script -->
+    <script>
+        let pollInterval = null;
+        let ws = null;
+
+        // WebSocket Connection for instant live logs
+        function initWebSocket() {
+            const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${proto}//${window.location.host}/ws/logs`;
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                ws.onmessage = (event) => {
+                    const msg = JSON.parse(event.data);
+                    handleLiveEvent(msg);
+                };
+                ws.onclose = () => {
+                    setTimeout(initWebSocket, 3000);
+                };
+            } catch (e) {
+                console.warn("WebSocket fallback to polling:", e);
+            }
+        }
+
+        function handleLiveEvent(event) {
+            if (event.type === "page_indexed") {
+                appendTerminalLog("SUCCESS", `[Index Engine] Successfully indexed: ${event.data.title || event.data.url} (${event.data.elapsed_ms}ms)`);
+                fetchGlobalStats();
+            } else if (event.type === "crawl_finished") {
+                appendTerminalLog("SUCCESS", `[Mission Complete] Crawl finished! Indexed: ${event.data.pages_indexed} pages in ${event.data.elapsed_sec}s`);
+                updateCrawlerStatusUI(false);
+                fetchGlobalStats();
+            } else if (event.type === "crawl_stopped") {
+                appendTerminalLog("WARNING", `[Crawler] Stopped by user command.`);
+                updateCrawlerStatusUI(false);
+            }
+        }
+
+        function appendTerminalLog(level, message) {
+            const container = document.getElementById("terminal-logs");
+            const div = document.createElement("div");
+            const time = new Date().toLocaleTimeString();
+
+            let color = "text-slate-300";
+            if (level === "SUCCESS") color = "text-emerald-400";
+            if (level === "WARNING") color = "text-amber-400";
+            if (level === "ERROR") color = "text-rose-400";
+            if (level === "INFO") color = "text-sky-300";
+
+            div.className = `${color}`;
+            div.innerHTML = `<span class="text-slate-600">[${time}]</span> <span class="font-bold">[${level}]</span> ${escapeHtml(message)}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearTerminalLogs() {
+            document.getElementById("terminal-logs").innerHTML = '<div class="text-slate-600">// Terminal cleared.</div>';
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            ['search', 'crawler', 'index', 'graph', 'gateway'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                if (view) view.classList.add('hidden');
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (btn) {
+                    if (t === 'gateway') {
+                        btn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-amber-400 hover:text-amber-300 transition-all duration-150 flex items-center space-x-2 border border-amber-500/30 bg-amber-950/20";
+                    } else {
+                        btn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-150 flex items-center space-x-2";
+                    }
+                }
+            });
+
+            const activeView = document.getElementById(`view-${tabId}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                if (tabId === 'gateway') {
+                    activeBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md border border-amber-400/40";
+                } else {
+                    activeBtn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-2 bg-sky-500 text-white shadow-sm";
+                }
+            }
+
+            if (tabId === 'index') {
+                loadIndexedDocuments(1);
+            } else if (tabId === 'graph') {
+                loadNetworkGraph();
+            }
+        }
+
+        // Gateway Functions
+        function updateGatewayUrlCount() {
+            const raw = document.getElementById('gateway-urls').value.trim();
+            const count = raw ? raw.split('\n').map(s => s.trim()).filter(s => s.length > 0).length : 0;
+            document.getElementById('gateway-url-counter').innerText = `${count} URL${count === 1 ? '' : 's'} detected`;
+        }
+
+        async function dispatchGatewayBatch() {
+            const raw = document.getElementById('gateway-urls').value.trim();
+            const urls = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            if (urls.length === 0) {
+                alert("Please paste at least one target URL in the textarea.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-gateway-dispatch');
+            const statusEl = document.getElementById('stat-gateway-status');
+            const latencyEl = document.getElementById('stat-gateway-latency');
+            const countEl = document.getElementById('stat-gateway-count');
+            const outputEl = document.getElementById('gateway-telemetry-output');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            statusEl.className = "mt-1 text-xs font-bold font-mono text-amber-400 animate-pulse";
+            statusEl.innerText = "DISPATCHING...";
+            outputEl.innerText = `// Initiating multi-protocol handshake for ${urls.length} target URLs...\n// Connecting to IndexNow consortium & Google WebSub hubs...`;
+
+            const hostDomain = document.getElementById('gateway-host').value.trim() || "indexing-gateway.local";
+            const apiKey = document.getElementById('gateway-key').value.trim();
+            const isLocalCrawl = document.getElementById('chk-local-crawl').checked;
+
+            const endpoint = isLocalCrawl ? '/api/gateway/instant-index' : '/api/gateway/push';
+            const payload = {
+                urls: urls,
+                host_domain: hostDomain,
+                api_key: apiKey,
+                feed_urls: document.getElementById('chk-websub').checked ? [`http://${hostDomain}/feed.xml`] : []
+            };
+
+            const startTime = performance.now();
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const elapsedMs = Math.round(performance.now() - startTime);
+
+                const data = await res.json();
+                countEl.innerText = urls.length;
+                latencyEl.innerText = `${elapsedMs}ms`;
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400";
+                statusEl.innerText = "SUCCESS";
+
+                outputEl.innerText = JSON.stringify(data, null, 2);
+                appendTerminalLog("SUCCESS", `[Gateway Handshake] Dispatched ${urls.length} URLs across IndexNow & WebSub (${elapsedMs}ms)`);
+                fetchGlobalStats();
+            } catch (e) {
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-400";
+                statusEl.innerText = "FAILED";
+                outputEl.innerText = `// Gateway Error: ${e.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+
+        async function manualPingBroadcast() {
+            const raw = document.getElementById('gateway-urls').value.trim();
+            const urls = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            const targetUrl = urls.length > 0 ? urls[0] : window.location.origin;
+
+            const outputEl = document.getElementById('gateway-telemetry-output');
+            const statusEl = document.getElementById('stat-gateway-status');
+            const latencyEl = document.getElementById('stat-gateway-latency');
+
+            statusEl.className = "mt-1 text-xs font-bold font-mono text-amber-400 animate-pulse";
+            statusEl.innerText = "PINGING...";
+            outputEl.innerText = `// Broadcasting pings to FeedBurner, Ping-O-Matic, Google WebSub, Twingly, Google Blog Search...\n// Target: ${targetUrl}`;
+
+            const startTime = performance.now();
+            try {
+                const res = await fetch('/api/ping/broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: "ApexSearch Live Discovery Notification",
+                        page_url: targetUrl,
+                        rss_url: `${window.location.origin}/feed.xml`
+                    })
+                });
+                const elapsedMs = Math.round(performance.now() - startTime);
+                const data = await res.json();
+
+                latencyEl.innerText = `${elapsedMs}ms`;
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400";
+                statusEl.innerText = "PINGED";
+                outputEl.innerText = JSON.stringify(data, null, 2);
+                appendTerminalLog("SUCCESS", `[Ping Broadcast] Notified ${data.successful_pings}/${data.total_services} services (${elapsedMs}ms)`);
+            } catch (e) {
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-400";
+                statusEl.innerText = "FAILED";
+                outputEl.innerText = `// Ping Error: ${e.message}`;
+            }
+        }
+
+        async function executePolitePaulBurst() {
+            const raw = document.getElementById('gateway-urls').value.trim();
+            const urls = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            if (urls.length === 0) {
+                alert("Please paste at least one target URL in the textarea.");
+                return;
+            }
+
+            const email = document.getElementById('pp-email').value.trim();
+            const password = document.getElementById('pp-password').value.trim();
+            const repeatCount = parseInt(document.getElementById('pp-repeat-count').value) || 10;
+
+            const btn = document.getElementById('btn-pp-burst');
+            const statusEl = document.getElementById('stat-gateway-status');
+            const latencyEl = document.getElementById('stat-gateway-latency');
+            const countEl = document.getElementById('stat-gateway-count');
+            const outputEl = document.getElementById('gateway-telemetry-output');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            statusEl.className = "mt-1 text-xs font-bold font-mono text-purple-400 animate-pulse";
+            statusEl.innerText = "BURSTING 10X...";
+            outputEl.innerText = `// Step 1: Connecting to PolitePaul.com as '${email}'...\n// Step 2: Generating XML/RSS syndication feeds...\n// Step 3: Executing ${repeatCount}x back-to-back ping bursts across:\n//  - Google WebSub (PubSubHubbub)\n//  - FeedBurner Google\n//  - Ping-O-Matic (HTTP & RPC)\n//  - PrePostSEO Multi-Pinger\n//  - Twingly & Google Blogsearch RPC`;
+
+            const startTime = performance.now();
+            try {
+                const res = await fetch('/api/gateway/politepaul-burst', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        urls: urls,
+                        email: email,
+                        password: password,
+                        repeat_count: repeatCount,
+                        auto_crawl: document.getElementById('chk-local-crawl').checked
+                    })
+                });
+                const elapsedMs = Math.round(performance.now() - startTime);
+                const data = await res.json();
+
+                countEl.innerText = urls.length;
+                latencyEl.innerText = `${elapsedMs}ms`;
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400";
+                statusEl.innerText = "BURST DONE";
+
+                outputEl.innerText = JSON.stringify(data, null, 2);
+                appendTerminalLog("SUCCESS", `[PolitePaul 10x Burst] Completed for ${urls.length} URLs (${data.ping_burst?.total_pings_sent || 0} total pings dispatched in ${elapsedMs}ms)`);
+                fetchGlobalStats();
+            } catch (e) {
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-400";
+                statusEl.innerText = "FAILED";
+                outputEl.innerText = `// PolitePaul Burst Error: ${e.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+
+        // Global Stats Fetch
+        async function fetchGlobalStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('header-indexed-count').innerText = data.total_documents || 0;
+                document.getElementById('header-terms-count').innerText = data.total_vocabulary || 0;
+            } catch (e) {
+                console.error("Failed to load global stats:", e);
+            }
+        }
+
+        // Crawler Controls
+        async function startCrawl() {
+            const rawSeeds = document.getElementById('crawl-seeds').value.trim();
+            const seeds = rawSeeds.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            if (seeds.length === 0) {
+                alert("Please specify at least one Seed URL!");
+                return;
+            }
+
+            const payload = {
+                seed_urls: seeds,
+                max_pages: parseInt(document.getElementById('crawl-max-pages').value),
+                max_depth: parseInt(document.getElementById('crawl-max-depth').value),
+                concurrency: parseInt(document.getElementById('crawl-concurrency').value),
+                politeness_delay: parseFloat(document.getElementById('crawl-delay').value),
+                same_domain_only: document.getElementById('crawl-same-domain').checked,
+                respect_robots: document.getElementById('crawl-respect-robots').checked
+            };
+
+            try {
+                const res = await fetch('/api/crawl/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert(err.detail || "Failed to start crawler");
+                    return;
+                }
+                updateCrawlerStatusUI(true);
+                appendTerminalLog("INFO", `Started crawler mission with ${seeds.length} seeds (max pages: ${payload.max_pages}, depth: ${payload.max_depth})`);
+                startPollingCrawlerStatus();
+            } catch (e) {
+                alert("Error launching crawl: " + e.message);
+            }
+        }
+
+        async function stopCrawl() {
+            try {
+                await fetch('/api/crawl/stop', { method: 'POST' });
+                appendTerminalLog("WARNING", "Stop signal dispatched...");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function clearDatabase() {
+            if (!confirm("Are you sure you want to completely purge the indexed documents, terms, and links?")) return;
+            try {
+                await fetch('/api/database/clear', { method: 'POST' });
+                appendTerminalLog("INFO", "Database and indexes cleared successfully.");
+                fetchGlobalStats();
+                loadIndexedDocuments(1);
+            } catch (e) {
+                alert("Failed to clear DB: " + e.message);
+            }
+        }
+
+        function updateCrawlerStatusUI(isRunning) {
+            const dot = document.getElementById('spider-status-dot');
+            const text = document.getElementById('spider-status-text');
+            const btnStart = document.getElementById('btn-start-crawl');
+            const btnStop = document.getElementById('btn-stop-crawl');
+
+            if (isRunning) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-ping";
+                text.className = "text-xs font-bold text-emerald-400";
+                text.innerText = "CRAWLING";
+                btnStart.disabled = true;
+                btnStart.classList.add('opacity-50', 'cursor-not-allowed');
+                btnStop.disabled = false;
+                btnStop.classList.remove('opacity-50');
+                btnStop.classList.add('bg-rose-600', 'text-white', 'hover:bg-rose-500');
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-slate-500";
+                text.className = "text-xs font-bold text-slate-400";
+                text.innerText = "IDLE";
+                btnStart.disabled = false;
+                btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnStop.disabled = true;
+                btnStop.classList.add('opacity-50');
+                btnStop.classList.remove('bg-rose-600', 'text-white', 'hover:bg-rose-500');
+            }
+        }
+
+        function startPollingCrawlerStatus() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/crawl/status');
+                    const data = await res.json();
+                    
+                    document.getElementById('stat-pages-crawled').innerText = data.pages_crawled;
+                    document.getElementById('stat-pages-indexed').innerText = data.pages_indexed;
+                    document.getElementById('stat-queue-size').innerText = data.queue_size;
+                    document.getElementById('spider-current-target').innerText = data.current_url || "Waiting...";
+
+                    updateCrawlerStatusUI(data.is_running);
+
+                    if (!data.is_running && pollInterval) {
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                        fetchGlobalStats();
+                    }
+                } catch (e) {
+                    console.error("Poll status error:", e);
+                }
+            }, 1000);
+        }
+
+        // Search Engine
+        async function performSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) return;
+
+            const emptyState = document.getElementById('search-empty-state');
+            const resultsList = document.getElementById('search-results-list');
+            const metaContainer = document.getElementById('search-meta');
+
+            emptyState.classList.add('hidden');
+            resultsList.classList.remove('hidden');
+            resultsList.innerHTML = '<div class="text-center py-8 text-sky-400 text-xs font-mono animate-pulse">Computing BM25 & PageRank relevance vectors...</div>';
+
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=25`);
+                const data = await res.json();
+
+                metaContainer.classList.remove('hidden');
+                document.getElementById('search-total-hits').innerText = data.total_hits;
+                document.getElementById('search-execution-time').innerText = `${data.execution_time_ms}ms`;
+
+                if (data.results.length === 0) {
+                    resultsList.innerHTML = `
+                        <div class="text-center py-12 text-slate-500 border border-slate-800 rounded-xl">
+                            <p class="text-sm">No matching indexed documents found for "<strong class="text-slate-300">${escapeHtml(query)}</strong>".</p>
+                            <p class="text-xs text-slate-600 mt-1">Try crawling more websites in Spider Lab.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                resultsList.innerHTML = data.results.map(r => `
+                    <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all duration-150 space-y-2 group">
+                        <div class="flex items-start justify-between">
+                            <div class="space-y-0.5">
+                                <span class="text-[11px] text-emerald-400 font-mono block truncate max-w-lg">${escapeHtml(r.url)}</span>
+                                <a href="${r.url}" target="_blank" class="text-base font-bold text-sky-400 group-hover:text-sky-300 group-hover:underline flex items-center space-x-1.5">
+                                    <span>${escapeHtml(r.title)}</span>
+                                    <svg class="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                            <button onclick="inspectDocument(${r.doc_id})" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-mono rounded text-slate-300">
+                                Inspect
+                            </button>
+                        </div>
+
+                        <p class="text-xs text-slate-300 font-sans leading-relaxed">${r.snippet}</p>
+
+                        <!-- Relevance Breakdown Badges -->
+                        <div class="pt-2 flex flex-wrap items-center gap-2 text-[10px] font-mono">
+                            <span class="px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800/50">Score: ${r.final_score}</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">BM25: ${r.bm25_score}</span>
+                            <span class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">PageRank: ${r.pagerank_score}</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-950 text-slate-500">${r.word_count} words</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                resultsList.innerHTML = `<div class="text-rose-400 text-xs p-4 bg-rose-950/30 rounded-xl border border-rose-900">Search error: ${e.message}</div>`;
+            }
+        }
+
+        // Inverted Index Explorer
+        async function loadIndexedDocuments(page = 1) {
+            const filter = document.getElementById('index-search-filter').value.trim();
+            const url = `/api/pages?page=${page}&page_size=12${filter ? `&q=${encodeURIComponent(filter)}` : ''}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const tbody = document.getElementById('index-table-body');
+
+                if (data.items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 font-sans">No indexed documents found.</td></tr>`;
+                    document.getElementById('index-pagination-info').innerText = "0 documents";
+                    return;
+                }
+
+                tbody.innerHTML = data.items.map(doc => `
+                    <tr class="hover:bg-slate-800/30 transition-colors">
+                        <td class="p-3.5 text-slate-500 font-bold">#${doc.id}</td>
+                        <td class="p-3.5 max-w-sm truncate">
+                            <div class="font-bold text-slate-200 truncate font-sans text-xs">${escapeHtml(doc.title || 'Untitled')}</div>
+                            <a href="${doc.url}" target="_blank" class="text-[11px] text-sky-400 hover:underline truncate block">${escapeHtml(doc.url)}</a>
+                        </td>
+                        <td class="p-3.5 text-center text-slate-400">${doc.word_count}</td>
+                        <td class="p-3.5 text-center font-bold text-emerald-400">${doc.pagerank_score}</td>
+                        <td class="p-3.5 text-slate-500 text-[11px]">${doc.crawled_at || 'N/A'}</td>
+                        <td class="p-3.5 text-right">
+                            <button onclick="inspectDocument(${doc.id})" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] rounded text-slate-300">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('index-pagination-info').innerText = `Showing ${data.items.length} of ${data.total} documents`;
+            } catch (e) {
+                console.error("Failed to load pages:", e);
+            }
+        }
+
+        // Document Inspection Modal
+        async function inspectDocument(docId) {
+            try {
+                const res = await fetch(`/api/pages/${docId}`);
+                const doc = await res.json();
+
+                document.getElementById('modal-title').innerText = doc.title || "Document #" + doc.id;
+                document.getElementById('modal-url').innerText = doc.url;
+                document.getElementById('modal-url').href = doc.url;
+                document.getElementById('modal-description').innerText = doc.description || "No description provided.";
+
+                // Top Terms
+                const termsContainer = document.getElementById('modal-terms');
+                if (doc.top_terms && doc.top_terms.length > 0) {
+                    termsContainer.innerHTML = doc.top_terms.map(t => `
+                        <span class="px-2 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700 text-[10px]">
+                            ${escapeHtml(t.term)} <strong class="text-emerald-400">(${t.term_frequency})</strong>
+                        </span>
+                    `).join('');
+                } else {
+                    termsContainer.innerHTML = '<span class="text-slate-500">None</span>';
+                }
+
+                // Outgoing Links
+                document.getElementById('modal-links-count').innerText = doc.outgoing_links ? doc.outgoing_links.length : 0;
+                const linksContainer = document.getElementById('modal-links');
+                if (doc.outgoing_links && doc.outgoing_links.length > 0) {
+                    linksContainer.innerHTML = doc.outgoing_links.map(l => `
+                        <div class="flex items-center justify-between py-0.5">
+                            <a href="${l.target_url}" target="_blank" class="text-sky-400 hover:underline truncate max-w-md">${escapeHtml(l.target_url)}</a>
+                            <span class="text-[10px] px-1.5 py-0.2 rounded ${l.is_internal ? 'bg-sky-950 text-sky-400' : 'bg-slate-800 text-slate-400'}">
+                                ${l.is_internal ? 'Internal' : 'External'}
+                            </span>
+                        </div>
+                    `).join('');
+                } else {
+                    linksContainer.innerHTML = '<div class="text-slate-500">No outgoing links detected.</div>';
+                }
+
+                // Clean text
+                document.getElementById('modal-text').innerText = doc.clean_text ? doc.clean_text.substring(0, 1500) + '...' : 'No text content';
+
+                document.getElementById('doc-modal').classList.remove('hidden');
+            } catch (e) {
+                alert("Failed to load document: " + e.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('doc-modal').classList.add('hidden');
+        }
+
+        // Link Graph Canvas Visualization
+        async function loadNetworkGraph() {
+            try {
+                const res = await fetch('/api/graph');
+                const graph = await res.json();
+
+                renderLeaderboard(graph.nodes);
+                drawGraphCanvas(graph);
+            } catch (e) {
+                console.error("Failed to load graph:", e);
+            }
+        }
+
+        function renderLeaderboard(nodes) {
+            const container = document.getElementById('pagerank-leaderboard');
+            if (!nodes || nodes.length === 0) {
+                container.innerHTML = '<div class="text-slate-500 text-center py-6">No graph nodes available.</div>';
+                return;
+            }
+
+            const sorted = [...nodes].sort((a, b) => b.pagerank - a.pagerank);
+            container.innerHTML = sorted.slice(0, 15).map((node, i) => `
+                <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2 truncate pr-2">
+                        <span class="text-[10px] font-bold ${i < 3 ? 'text-amber-400' : 'text-slate-500'} font-mono">#${i + 1}</span>
+                        <span class="text-slate-200 truncate font-semibold">${escapeHtml(node.label)}</span>
+                    </div>
+                    <span class="font-mono text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-950/60 text-[10px]">
+                        ${node.pagerank.toFixed(3)}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function drawGraphCanvas(graph) {
+            const canvas = document.getElementById('graph-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight - 40;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const nodes = graph.nodes || [];
+            const edges = graph.edges || [];
+            if (nodes.length === 0) {
+                ctx.fillStyle = '#64748b';
+                ctx.font = '12px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('No crawled links in graph yet.', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            // Simple circular / force distribution for node positions
+            const nodePos = {};
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) * 0.75;
+
+            nodes.forEach((node, idx) => {
+                const angle = (idx / nodes.length) * 2 * Math.PI;
+                nodePos[node.id] = {
+                    x: centerX + radius * Math.cos(angle),
+                    y: centerY + radius * Math.sin(angle),
+                    node: node
+                };
+            });
+
+            // Draw Edges
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+            ctx.lineWidth = 1.2;
+
+            edges.forEach(edge => {
+                const p1 = nodePos[edge.source];
+                const p2 = nodePos[edge.target];
+                if (p1 && p2) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            });
+
+            // Draw Nodes
+            nodes.forEach(node => {
+                const p = nodePos[node.id];
+                if (!p) return;
+
+                const nodeR = Math.max(6, Math.min(18, 6 * (node.pagerank || 1.0)));
+
+                // Glow
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, nodeR + 3, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+                ctx.fill();
+
+                // Circle
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, nodeR, 0, 2 * Math.PI);
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '10px Plus Jakarta Sans';
+                ctx.textAlign = 'center';
+                const labelText = node.label.length > 18 ? node.label.substring(0, 18) + '...' : node.label;
+                ctx.fillText(labelText, p.x, p.y + nodeR + 12);
+            });
+        }
+
+        async function triggerPageRankRecalc() {
+            try {
+                const res = await fetch('/api/indexer/recalculate-pagerank', { method: 'POST' });
+                const data = await res.json();
+                alert(`PageRank recalculated for ${data.total_updated} documents!`);
+                loadNetworkGraph();
+            } catch (e) {
+                alert("Failed: " + e.message);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initWebSocket();
+            fetchGlobalStats();
+        });
+    </script>
+</body>
+</html>
+
