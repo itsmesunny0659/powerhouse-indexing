@@ -18,6 +18,7 @@ from backend.gateway.feed_generator import FeedGenerator
 from backend.gateway.ping_services import PingEngine
 from backend.gateway.politepaul import PolitePaulClient
 from backend.gateway.feedburner_google import FeedburnerGoogleClient
+from backend.gateway.googlebot_summoner import GooglebotSummoner
 from fastapi.responses import Response, PlainTextResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
