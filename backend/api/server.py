@@ -17,6 +17,7 @@ from backend.gateway.google_handshake import GoogleHandshakeGateway
 from backend.gateway.feed_generator import FeedGenerator
 from backend.gateway.ping_services import PingEngine
 from backend.gateway.politepaul import PolitePaulClient
+from backend.gateway.feedburner_google import FeedburnerGoogleClient
 from fastapi.responses import Response, PlainTextResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -207,7 +208,11 @@ async def politepaul_burst_endpoint(req: PolitePaulBurstRequest, bg_tasks: Backg
     feed_urls = [r.get("politepaul_feed_url") for r in politepaul_results if r.get("politepaul_feed_url")]
     primary_feed = feed_urls[0] if feed_urls else ""
 
-    # Step 2: Back-to-Back 10x Ping Burst across all ping sites
+    # Step 2: Notify Official Google FeedBurner (feedburner.google.com)
+    feedburner_client = FeedburnerGoogleClient(account_email=req.email)
+    feedburner_res = await feedburner_client.notify_feedburner_update(feed_url=primary_feed or f"http://localhost:8000/feed.xml")
+
+    # Step 3: Back-to-Back 10x Ping Burst across all ping sites
     burst_results = await ping_engine.burst_10x_pings(
         urls=clean_urls,
         title="PolitePaul Verified Syndication Feed",
@@ -239,6 +244,7 @@ async def politepaul_burst_endpoint(req: PolitePaulBurstRequest, bg_tasks: Backg
         "status": "success",
         "politepaul_authenticated": logged_in,
         "politepaul_feeds_generated": politepaul_results,
+        "feedburner_google": feedburner_res,
         "ping_burst": burst_results
     }
 
