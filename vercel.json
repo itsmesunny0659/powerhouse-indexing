@@ -5,26 +5,6 @@
       "destination": "/api/index.py"
     },
     {
-      "source": "/news-sitemap.xml",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/sitemap.xml",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/feed.xml",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/google(.*).html",
-      "destination": "/api/index.py"
-    },
-    {
       "source": "/i/(.*)",
       "destination": "/api/index.py"
     },
