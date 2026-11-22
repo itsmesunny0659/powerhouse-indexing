@@ -1512,8 +1512,13 @@
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) {
-                    const err = await res.json();
-                    alert(err.detail || "Failed to start crawler");
+                    const rawText = await res.text();
+                    let errMsg = rawText || "Failed to start crawler";
+                    try {
+                        const err = JSON.parse(rawText);
+                        errMsg = err.detail || err.message || errMsg;
+                    } catch (_) {}
+                    alert(errMsg);
                     return;
                 }
                 updateCrawlerStatusUI(true);
