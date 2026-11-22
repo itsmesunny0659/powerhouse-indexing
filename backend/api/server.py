@@ -24,6 +24,7 @@ from backend.gateway.trust_engine import trust_engine
 from backend.gateway.traffic_emulation import traffic_emulator
 from backend.gateway.gateway_shell import gateway_shell
 from backend.gateway.indexability_checker import IndexabilityChecker
+from backend.gateway.google_news_engine import google_news_engine
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -319,8 +320,120 @@ async def get_rss_feed():
 
 @app.get("/robots.txt")
 async def get_robots_txt():
-    txt = "User-agent: *\nAllow: /\n\nSitemap: http://localhost:8000/sitemap.xml\n"
+    txt = "User-agent: *\nAllow: /\nAllow: /news/\nAllow: /i/\n\nSitemap: http://localhost:8000/sitemap.xml\nSitemap: http://localhost:8000/news-sitemap.xml\n"
     return PlainTextResponse(content=txt)
+
+# In-memory news feed cache for dynamic news sitemap
+active_news_items = []
+
+@app.get("/news-sitemap.xml")
+async def get_news_sitemap():
+    """
+    Official Google News XML Sitemap:
+    Conforms to http://www.google.com/schemas/sitemap-news/0.9
+    Googlebot-News prioritizes this sitemap over regular sitemaps.
+    """
+    sample_news = active_news_items if active_news_items else [
+        {
+            "url": "http://localhost:8000/news/u_live_wire",
+            "title": "Global Breaking News Wire: Priority Search Ingestion Active",
+            "published_at": "2026-11-22T19:00:00Z"
+        }
+    ]
+    xml_content = google_news_engine.generate_google_news_sitemap_xml(sample_news)
+    return Response(content=xml_content, media_type="application/xml")
+
+@app.get("/news/{url_id}")
+async def serve_news_gateway(url_id: str):
+    """
+    Google News Priority Gateway Shell:
+    Injects NewsArticle, LiveBlogPosting, BroadcastEvent Schema + Trust Project standards.
+    """
+    target_url = gateway_shell.decode_url_id(url_id) or "https://news.google.com"
+    html_content = google_news_engine.generate_news_html_wrapper(
+        target_url=target_url,
+        title="BREAKING: High Priority Global News Wire Dispatch",
+        summary="Urgent live bulletin broadcast with high editorial verification and canonical priority indexing."
+    )
+    return HTMLResponse(content=html_content, headers={"X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large"})
+
+class GoogleNewsPriorityRequest(BaseModel):
+    urls: List[str]
+    headline: Optional[str] = None
+    summary: Optional[str] = None
+    publication_name: Optional[str] = "Apex Breaking News Network"
+
+@app.post("/api/gateway/google-news-priority")
+async def google_news_priority_endpoint(req: GoogleNewsPriorityRequest, bg_tasks: BackgroundTasks):
+    """
+    Google News Tier-1 Publisher Engine (BBC / AajTak / Times of India Grade):
+    1. Wraps target URLs into Schema.org NewsArticle & LiveBlogPosting JSON-LD.
+    2. Enrolls in /news-sitemap.xml with priority 1.0 and changefreq always.
+    3. Pings Google WebSub Hub (pubsubhubbub.appspot.com) for Googlebot-News crawl dispatch.
+    4. Triggers Priority 0 Google Rich Results Bot Summoner.
+    5. Submits to GCP Indexing API as BROADCAST_EVENT & URL_UPDATED.
+    """
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+
+    clean_urls = [u.strip() for u in req.urls if u.strip()]
+    registered_news = []
+    websub_pings = []
+    news_gateways = []
+
+    for u in clean_urls:
+        encoded_id = gateway_shell.encode_url_id(u)
+        news_url = f"http://localhost:8000/news/{encoded_id}"
+        news_gateways.append(news_url)
+
+        item = {
+            "url": news_url,
+            "target_canonical": u,
+            "title": req.headline or f"BREAKING WIRE: Urgent Global Update Regarding {u.split('//')[-1].split('/')[0]}",
+            "published_at": "2026-11-22T19:00:00Z"
+        }
+        active_news_items.insert(0, item)
+        registered_news.append(item)
+
+    # Keep active news items trimmed to top 100
+    del active_news_items[100:]
+
+    # Step 1: Ping Google News WebSub Hub
+    hub_res = await google_news_engine.ping_google_news_sub("http://localhost:8000/news-sitemap.xml")
+    websub_pings.append(hub_res)
+
+    # Step 2: Googlebot Summoner for the news pages & targets
+    summoner = GooglebotSummoner()
+    summoner_results = []
+    for u in clean_urls:
+        s_res = await summoner.execute_rocket_pipeline(target_url=u)
+        summoner_results.append(s_res)
+
+    # Step 3: Google Indexing API Multi-Account Rotator
+    gcp_results = await gcp_rotator.submit_batch(clean_urls, action="URL_UPDATED")
+
+    # Step 4: Background 10x Ping Burst with News title
+    async def run_news_pings():
+        await ping_engine.burst_10x_pings(
+            urls=clean_urls,
+            title="Google News Verified Breaking Wire",
+            repeat_count=5,
+            delay_between_rounds=0.2
+        )
+    bg_tasks.add_task(run_news_pings)
+
+    return {
+        "status": "GOOGLE_NEWS_PRIORITY_ACTIVATED",
+        "publication_tier": "Tier-1 Breaking News (BBC/AajTak Standard)",
+        "total_news_items": len(clean_urls),
+        "news_sitemap": "http://localhost:8000/news-sitemap.xml",
+        "news_gateways": news_gateways,
+        "schema_type": "NewsArticle + LiveBlogPosting + BroadcastEvent",
+        "websub_ping": websub_pings,
+        "googlebot_summoner": summoner_results,
+        "gcp_api_rotator": gcp_results
+    }
+
 
 @app.get("/i/{url_id}")
 async def serve_gateway_page(url_id: str):

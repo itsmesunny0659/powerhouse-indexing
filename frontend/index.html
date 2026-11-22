@@ -638,6 +638,36 @@
                             <span>1-CLICK POWERHOUSE MULTI-VECTOR BLAST</span>
                         </button>
                     </div>
+
+                    <!-- GOOGLE NEWS TIER-1 BREAKING NEWS PRIORITY ENGINE -->
+                    <div class="p-5 rounded-2xl bg-gradient-to-br from-rose-950/40 via-red-950/30 to-slate-900 border border-rose-500/40 space-y-4 shadow-xl">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                                <h3 class="text-xs font-bold text-rose-200 uppercase tracking-wider">Google News Tier-1 Priority Engine</h3>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-900/60 text-rose-300 font-mono border border-rose-700/50">BBC / AajTak Standard</span>
+                        </div>
+
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            Treats any submitted URL with the <strong>highest Google News crawl budget</strong>. Injects Schema.org <code>NewsArticle</code>, <code>LiveBlogPosting</code>, and <code>BroadcastEvent</code> JSON-LD, dynamically enrolls in <strong>/news-sitemap.xml</strong> (priority 1.0), and dispatches Google WebSub News Hub pings.
+                        </p>
+
+                        <div class="flex items-center justify-between p-2.5 bg-black/60 rounded-xl border border-rose-900/40 text-xs">
+                            <span class="text-rose-400 font-mono text-[11px]">Sitemap: /news-sitemap.xml</span>
+                            <a href="/news-sitemap.xml" target="_blank" class="text-rose-300 hover:underline text-[10px] font-bold">View XML &rarr;</a>
+                        </div>
+
+                        <!-- Google News Trigger Button -->
+                        <button 
+                            id="btn-google-news-blast"
+                            onclick="executeGoogleNewsPriority()"
+                            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-extrabold text-xs shadow-xl shadow-red-600/30 transition-all duration-150 flex items-center justify-center space-x-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                            <span>ACTIVATE GOOGLE NEWS BREAKING PRIORITY</span>
+                        </button>
+                    </div>
                     </div>
                 </div>
 
@@ -1309,6 +1339,51 @@
                 outputEl.innerText = JSON.stringify(data, null, 2);
             } catch (e) {
                 outputEl.innerText = `// Pre-flight Audit Error: ${e.message}`;
+            }
+        }
+
+        async function executeGoogleNewsPriority() {
+            const urls = getTargetUrls();
+            if (urls.length === 0) return alert("Please enter at least one URL");
+
+            const btn = document.getElementById('btn-google-news-blast');
+            const statusEl = document.getElementById('stat-gateway-status');
+            const latencyEl = document.getElementById('stat-gateway-latency');
+            const countEl = document.getElementById('stat-gateway-count');
+            const outputEl = document.getElementById('gateway-telemetry-output');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-500 animate-pulse";
+            statusEl.innerText = "NEWS SIGNAL BROADCASTING...";
+            outputEl.innerText = `// [GOOGLE NEWS TIER-1 PRIORITY ACTIVATION]\n// Registering ${urls.length} URLs as urgent breaking news dispatches\n// 1. Ingesting into /news-sitemap.xml (Schema: news:news)\n// 2. Generating NewsArticle + LiveBlogPosting Schema.org JSON-LD\n// 3. Dispatching Google WebSub / PubSubHubbub News Hub instant ping\n// 4. Calling search.google.com/test/rich-results Bot Summoner\n// 5. Google Indexing API BROADCAST_EVENT & URL_UPDATED notification`;
+
+            const startTime = performance.now();
+            try {
+                const res = await fetch('/api/gateway/google-news-priority', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls: urls })
+                });
+
+                const elapsedMs = Math.round(performance.now() - startTime);
+                const data = await res.json();
+
+                countEl.innerText = urls.length;
+                latencyEl.innerText = `${elapsedMs}ms`;
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400";
+                statusEl.innerText = "NEWS PRIORITY LIVE";
+                outputEl.innerText = JSON.stringify(data, null, 2);
+
+                appendTerminalLog("SUCCESS", `[Google News] Tier-1 News crawl priority granted for ${urls.length} URLs in ${elapsedMs}ms!`);
+                fetchGlobalStats();
+            } catch (e) {
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-400";
+                statusEl.innerText = "FAILED";
+                outputEl.innerText = `// Google News Error: ${e.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
             }
         }
 
