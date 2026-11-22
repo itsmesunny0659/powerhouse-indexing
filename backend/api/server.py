@@ -876,10 +876,10 @@ async def websocket_logs(websocket: WebSocket):
 # Ensure routes work whether Vercel preserves or strips /api prefix
 @app.middleware("http")
 async def strip_api_prefix_middleware(request, call_next):
-    # If path doesn't start with /api but matches an /api route, or vice versa
     path = request.url.path
-    if not path.startswith("/api") and not path.startswith("/static") and not path.endswith(".xml") and not path.endswith(".html") and not path.endswith(".txt") and path != "/":
-        # Check if /api + path exists
+    if path.startswith("/api/index.py"):
+        request.scope["path"] = path.replace("/api/index.py", "/api")
+    elif not path.startswith("/api") and not path.startswith("/static") and not path.endswith(".xml") and not path.endswith(".html") and not path.endswith(".txt") and path != "/":
         api_path = f"/api{path}"
         for route in app.routes:
             if getattr(route, "path", None) == api_path:
@@ -891,8 +891,11 @@ async def strip_api_prefix_middleware(request, call_next):
 # Mount frontend directory for web interface
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
-if os.path.exists(FRONTEND_DIR):
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+try:
+    if os.path.exists(FRONTEND_DIR):
+        app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+except Exception:
+    pass
 
 @app.get("/")
 async def serve_index():
@@ -903,5 +906,9 @@ async def serve_index():
     ]
     for p in candidates:
         if os.path.exists(p):
-            return FileResponse(p)
+            try:
+                return FileResponse(p)
+            except Exception:
+                with open(p, "r", encoding="utf-8") as f:
+                    return HTMLResponse(f.read())
     return HTMLResponse("<h1>ApexSearch Fast Indexing Engine</h1>")

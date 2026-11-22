@@ -1,59 +1,16 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "public/**",
-      "use": "@vercel/static"
+      "source": "/i/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "*.xml",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "*.txt",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/i/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/news/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/sitemap.xml",
-      "dest": "public/sitemap.xml"
-    },
-    {
-      "src": "/news-sitemap.xml",
-      "dest": "public/news-sitemap.xml"
-    },
-    {
-      "src": "/robots.txt",
-      "dest": "public/robots.txt"
-    },
-    {
-      "src": "/feed.xml",
-      "dest": "public/feed.xml"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "public/index.html"
+      "source": "/news/(.*)",
+      "destination": "/api/index.py"
     }
   ]
 }
