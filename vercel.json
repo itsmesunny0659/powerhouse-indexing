@@ -21,6 +21,10 @@
       "destination": "/api/index.py"
     },
     {
+      "source": "/google(.*).html",
+      "destination": "/api/index.py"
+    },
+    {
       "source": "/i/(.*)",
       "destination": "/api/index.py"
     },

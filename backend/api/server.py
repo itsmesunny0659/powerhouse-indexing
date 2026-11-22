@@ -324,6 +324,11 @@ async def get_robots_txt():
     txt = "User-agent: *\nAllow: /\nAllow: /news/\nAllow: /i/\n\nSitemap: http://localhost:8000/sitemap.xml\nSitemap: http://localhost:8000/news-sitemap.xml\n"
     return PlainTextResponse(content=txt)
 
+@app.get("/google{code}.html")
+async def google_site_verification_file(code: str):
+    """Google Search Console HTML File verification handler."""
+    return HTMLResponse(f"google-site-verification: google{code}.html")
+
 # In-memory news feed cache for dynamic news sitemap
 active_news_items = []
 
