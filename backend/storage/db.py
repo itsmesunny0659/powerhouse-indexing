@@ -3,7 +3,10 @@ import json
 import os
 from typing import List, Dict, Any, Optional, Tuple
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "search_engine.db")
+if os.environ.get("VERCEL"):
+    DB_PATH = "/tmp/search_engine.db"
+else:
+    DB_PATH = os.path.join(os.path.dirname(__file__), "search_engine.db")
 
 class SearchDB:
     def __init__(self, db_path: str = DB_PATH):
