@@ -873,6 +873,21 @@ async def websocket_logs(websocket: WebSocket):
     except Exception:
         ws_manager.disconnect(websocket)
 
+# Ensure routes work whether Vercel preserves or strips /api prefix
+@app.middleware("http")
+async def strip_api_prefix_middleware(request, call_next):
+    # If path doesn't start with /api but matches an /api route, or vice versa
+    path = request.url.path
+    if not path.startswith("/api") and not path.startswith("/static") and not path.endswith(".xml") and not path.endswith(".html") and not path.endswith(".txt") and path != "/":
+        # Check if /api + path exists
+        api_path = f"/api{path}"
+        for route in app.routes:
+            if getattr(route, "path", None) == api_path:
+                request.scope["path"] = api_path
+                break
+    response = await call_next(request)
+    return response
+
 # Mount frontend directory for web interface
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
