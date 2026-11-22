@@ -868,10 +868,19 @@ async def websocket_logs(websocket: WebSocket):
         ws_manager.disconnect(websocket)
 
 # Mount frontend directory for web interface
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
-    @app.get("/")
-    async def serve_index():
-        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+@app.get("/")
+async def serve_index():
+    candidates = [
+        os.path.join(ROOT_DIR, "index.html"),
+        os.path.join(ROOT_DIR, "public", "index.html"),
+        os.path.join(FRONTEND_DIR, "index.html")
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return FileResponse(p)
+    return HTMLResponse("<h1>ApexSearch Fast Indexing Engine</h1>")

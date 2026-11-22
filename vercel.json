@@ -1,51 +1,32 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/news-sitemap.xml",
-      "dest": "/api/index.py"
+      "source": "/news-sitemap.xml",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/sitemap.xml",
-      "dest": "/api/index.py"
+      "source": "/sitemap.xml",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/feed.xml",
-      "dest": "/api/index.py"
+      "source": "/feed.xml",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/robots.txt",
-      "dest": "/api/index.py"
+      "source": "/robots.txt",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/i/(.*)",
-      "dest": "/api/index.py"
+      "source": "/i/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/news/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/docs",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/openapi.json",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/index.html"
+      "source": "/news/(.*)",
+      "destination": "/api/index.py"
     }
   ]
 }
