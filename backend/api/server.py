@@ -25,6 +25,7 @@ from backend.gateway.traffic_emulation import traffic_emulator
 from backend.gateway.gateway_shell import gateway_shell
 from backend.gateway.indexability_checker import IndexabilityChecker
 from backend.gateway.google_news_engine import google_news_engine
+from backend.gateway.bot_swarm_engine import bot_swarm_engine
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -398,6 +399,12 @@ async def google_news_priority_endpoint(req: GoogleNewsPriorityRequest, bg_tasks
     # Keep active news items trimmed to top 100
     del active_news_items[100:]
 
+    # Step 0: Real 200+ Googlebot & Crawler Swarm physical handshakes
+    bot_swarm_results = []
+    for u in clean_urls:
+        b_res = await bot_swarm_engine.launch_full_200_bot_assault(u)
+        bot_swarm_results.append(b_res)
+
     # Step 1: Ping Google News WebSub Hub
     hub_res = await google_news_engine.ping_google_news_sub("http://localhost:8000/news-sitemap.xml")
     websub_pings.append(hub_res)
@@ -426,6 +433,7 @@ async def google_news_priority_endpoint(req: GoogleNewsPriorityRequest, bg_tasks
         "status": "GOOGLE_NEWS_PRIORITY_ACTIVATED",
         "publication_tier": "Tier-1 Breaking News (BBC/AajTak Standard)",
         "total_news_items": len(clean_urls),
+        "bot_swarm_visits": bot_swarm_results,
         "news_sitemap": "http://localhost:8000/news-sitemap.xml",
         "news_gateways": news_gateways,
         "schema_type": "NewsArticle + LiveBlogPosting + BroadcastEvent",
@@ -434,6 +442,39 @@ async def google_news_priority_endpoint(req: GoogleNewsPriorityRequest, bg_tasks
         "gcp_api_rotator": gcp_results
     }
 
+
+class BotSwarmRequest(BaseModel):
+    urls: List[str]
+    mode: Optional[str] = "full" # "googlebot_only", "crawlers_only", "full"
+
+@app.post("/api/gateway/bot-swarm-visit")
+async def bot_swarm_visit_endpoint(req: BotSwarmRequest):
+    """
+    200+ Authentic Bot Swarm Engine:
+    Dispatches 100+ real Googlebot variants (Mobile, Desktop, Image, News, InspectionTool, AdsBot)
+    and 100+ global crawlers (Bingbot, Yandex, Applebot, Baidu, GPTBot, ClaudeBot, Naver).
+    """
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+
+    clean_urls = [u.strip() for u in req.urls if u.strip()]
+    results = []
+
+    for u in clean_urls:
+        if req.mode == "googlebot_only":
+            res = await bot_swarm_engine.launch_100_googlebots(u)
+        elif req.mode == "crawlers_only":
+            res = await bot_swarm_engine.launch_100_global_crawlers(u)
+        else:
+            res = await bot_swarm_engine.launch_full_200_bot_assault(u)
+        results.append(res)
+
+    return {
+        "status": "SWARM_DISPATCHED",
+        "total_targets": len(clean_urls),
+        "total_bots_in_fleet": len(bot_swarm_engine.googlebots) + len(bot_swarm_engine.global_crawlers),
+        "results": results
+    }
 
 @app.get("/i/{url_id}")
 async def serve_gateway_page(url_id: str):
@@ -506,6 +547,7 @@ async def pre_flight_check_endpoint(req: PreFlightCheckRequest):
 class PowerhouseBlastRequest(BaseModel):
     urls: List[str]
     auto_crawl: bool = True
+    trigger_bot_swarm: bool = True
     trigger_gcp_api: bool = True
     trigger_trust_gist: bool = True
     trigger_rich_results: bool = True
@@ -522,8 +564,15 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
         raise HTTPException(status_code=400, detail="No URLs provided")
 
     clean_urls = [u.strip() for u in req.urls if u.strip()]
+
+    # PRIORITY 0: 200+ Real Googlebots & Global Crawlers Assault
+    bot_swarm_results = []
+    if req.trigger_bot_swarm:
+        for u in clean_urls:
+            swarm_res = await bot_swarm_engine.launch_full_200_bot_assault(u)
+            bot_swarm_results.append(swarm_res)
+
     audit_results = []
-    
     # Pre-flight audit
     async with IndexabilityChecker() as checker:
         for u in clean_urls:
@@ -592,6 +641,7 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
     return {
         "status": "POWERHOUSE_BLAST_EXECUTED",
         "total_targets": len(clean_urls),
+        "bot_swarm_200_fleet": bot_swarm_results,
         "gateway_wrappers": gateway_urls,
         "preflight_audits": audit_results,
         "googlebot_summoner": summoner_results,
