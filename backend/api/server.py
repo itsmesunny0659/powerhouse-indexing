@@ -387,9 +387,10 @@ async def google_news_priority_endpoint(req: GoogleNewsPriorityRequest, bg_tasks
     websub_pings = []
     news_gateways = []
 
+    BASE_HUB = "https://powerhouse-indexing-zvxh.vercel.app"
     for u in clean_urls:
         encoded_id = gateway_shell.encode_url_id(u)
-        news_url = f"http://localhost:8000/news/{encoded_id}"
+        news_url = f"{BASE_HUB}/news/{encoded_id}"
         news_gateways.append(news_url)
 
         item = {
@@ -411,7 +412,7 @@ async def google_news_priority_endpoint(req: GoogleNewsPriorityRequest, bg_tasks
         bot_swarm_results.append(b_res)
 
     # Step 1: Ping Google News WebSub Hub
-    hub_res = await google_news_engine.ping_google_news_sub("http://localhost:8000/news-sitemap.xml")
+    hub_res = await google_news_engine.ping_google_news_sub(f"{BASE_HUB}/news-sitemap.xml")
     websub_pings.append(hub_res)
 
     # Step 2: Googlebot Summoner for the news pages & targets
