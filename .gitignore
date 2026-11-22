@@ -7,3 +7,9 @@ __pycache__/
 build/
 .vscode/
 .idea/
+service_accounts/
+data/keys.json
+*.key
+*.pem
+temp_repo/
+

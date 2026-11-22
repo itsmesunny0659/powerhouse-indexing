@@ -585,6 +585,59 @@
                             <span>Execute PolitePaul XML + 10x Ping Burst</span>
                         </button>
                     </div>
+
+                    <!-- ULTIMATE POWERHOUSE MULTI-VECTOR BLAST SUITE -->
+                    <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-teal-950/30 to-slate-900 border border-emerald-500/40 space-y-4 shadow-xl">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <h3 class="text-xs font-bold text-emerald-200 uppercase tracking-wider">Fast-Indexing Secret Multi-Vector Engine</h3>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-900/60 text-emerald-300 font-mono border border-emerald-700/50">Enterprise Suite</span>
+                        </div>
+
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            Simultaneously triggers the 5 secret enterprise indexing vectors: <strong>GCP Service Account Rotator</strong> (bypasses 200 URL/day limit), <strong>High-DA Schema.org Gateway Pages</strong>, <strong>GitHub Gist DA 96 Trust Signal</strong>, <strong>Residential Traffic Emulation (Jio/Airtel)</strong>, and <strong>Priority 0 Rich-Results Bot Summoning</strong>.
+                        </p>
+
+                        <!-- Modular Action Buttons Grid -->
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button 
+                                onclick="executeGCPRotator()"
+                                class="py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold border border-emerald-500/30 text-[11px] flex items-center justify-center space-x-1"
+                            >
+                                <span>🔑 GCP SA Rotator</span>
+                            </button>
+                            <button 
+                                onclick="executeTrustSyndicate()"
+                                class="py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-sky-400 font-bold border border-sky-500/30 text-[11px] flex items-center justify-center space-x-1"
+                            >
+                                <span>🐙 GitHub Gist (DA 96)</span>
+                            </button>
+                            <button 
+                                onclick="executeTrafficEmulation()"
+                                class="py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold border border-amber-500/30 text-[11px] flex items-center justify-center space-x-1"
+                            >
+                                <span>📱 Jio/Airtel Traffic</span>
+                            </button>
+                            <button 
+                                onclick="executePreflightCheck()"
+                                class="py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-purple-400 font-bold border border-purple-500/30 text-[11px] flex items-center justify-center space-x-1"
+                            >
+                                <span>🔍 Pre-flight Audit</span>
+                            </button>
+                        </div>
+
+                        <!-- 1-Click Ultimate Powerhouse Button -->
+                        <button 
+                            id="btn-powerhouse-blast"
+                            onclick="executePowerhouseBlast()"
+                            class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:from-emerald-400 hover:to-sky-400 text-black font-extrabold text-xs shadow-xl shadow-emerald-500/30 transition-all duration-150 flex items-center justify-center space-x-2"
+                        >
+                            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span>1-CLICK POWERHOUSE MULTI-VECTOR BLAST</span>
+                        </button>
+                    </div>
                     </div>
                 </div>
 
@@ -1122,6 +1175,140 @@
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('opacity-50');
+            }
+        }
+
+        // ================= POWERHOUSE MULTI-VECTOR HANDLERS =================
+        function getTargetUrls() {
+            const raw = document.getElementById('gateway-urls').value.trim();
+            return raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        }
+
+        async function executePowerhouseBlast() {
+            const urls = getTargetUrls();
+            if (urls.length === 0) {
+                alert("Please paste at least one target URL in the textarea.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-powerhouse-blast');
+            const statusEl = document.getElementById('stat-gateway-status');
+            const latencyEl = document.getElementById('stat-gateway-latency');
+            const countEl = document.getElementById('stat-gateway-count');
+            const outputEl = document.getElementById('gateway-telemetry-output');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400 animate-pulse";
+            statusEl.innerText = "POWERHOUSE FIRING...";
+            outputEl.innerText = `// [POWERHOUSE BLAST LAUNCHED]\n// Firing 5 vectors simultaneously for ${urls.length} URLs:\n// 1. Google Rich Results Summoner\n// 2. GCP Service Account Rotator (2000+ URL Quota Pool)\n// 3. GitHub Gist DA 96 Authority Signal\n// 4. Residential Jio / Airtel Traffic Handshake\n// 5. 10x Consecutive Ping Burst & Canonical Gateway Shells`;
+
+            const startTime = performance.now();
+            try {
+                const res = await fetch('/api/gateway/powerhouse-blast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        urls: urls,
+                        auto_crawl: document.getElementById('chk-local-crawl').checked,
+                        trigger_gcp_api: true,
+                        trigger_trust_gist: true,
+                        trigger_rich_results: true,
+                        trigger_traffic_emulation: true,
+                        trigger_ping_burst: true
+                    })
+                });
+
+                const elapsedMs = Math.round(performance.now() - startTime);
+                const data = await res.json();
+
+                countEl.innerText = urls.length;
+                latencyEl.innerText = `${elapsedMs}ms`;
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400";
+                statusEl.innerText = "BLAST DELIVERED";
+                outputEl.innerText = JSON.stringify(data, null, 2);
+
+                appendTerminalLog("SUCCESS", `[Powerhouse Suite] Multi-vector blast delivered in ${elapsedMs}ms across 5 engines!`);
+                fetchGlobalStats();
+            } catch (e) {
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-400";
+                statusEl.innerText = "FAILED";
+                outputEl.innerText = `// Powerhouse Error: ${e.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+
+        async function executeGCPRotator() {
+            const urls = getTargetUrls();
+            if (urls.length === 0) return alert("Please enter at least one URL");
+            const outputEl = document.getElementById('gateway-telemetry-output');
+            outputEl.innerText = `// Contacting Google Indexing API with rotated GCP Service Accounts...`;
+            try {
+                const res = await fetch('/api/gateway/gcp-indexing-rotator', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls: urls, action: 'URL_UPDATED' })
+                });
+                const data = await res.json();
+                outputEl.innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                outputEl.innerText = `// GCP Rotator Error: ${e.message}`;
+            }
+        }
+
+        async function executeTrustSyndicate() {
+            const urls = getTargetUrls();
+            if (urls.length === 0) return alert("Please enter at least one URL");
+            const outputEl = document.getElementById('gateway-telemetry-output');
+            outputEl.innerText = `// Generating GitHub Gist (DA 96) and XML-RPC broadcast...`;
+            try {
+                const res = await fetch('/api/gateway/trust-syndicate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urls[0] })
+                });
+                const data = await res.json();
+                outputEl.innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                outputEl.innerText = `// Trust Engine Error: ${e.message}`;
+            }
+        }
+
+        async function executeTrafficEmulation() {
+            const urls = getTargetUrls();
+            if (urls.length === 0) return alert("Please enter at least one URL");
+            const outputEl = document.getElementById('gateway-telemetry-output');
+            outputEl.innerText = `// Emulating Residential Mobile Traffic (Jio 4G / Airtel)...`;
+            try {
+                const res = await fetch('/api/gateway/traffic-emulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urls[0] })
+                });
+                const data = await res.json();
+                outputEl.innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                outputEl.innerText = `// Traffic Emulation Error: ${e.message}`;
+            }
+        }
+
+        async function executePreflightCheck() {
+            const urls = getTargetUrls();
+            if (urls.length === 0) return alert("Please enter at least one URL");
+            const outputEl = document.getElementById('gateway-telemetry-output');
+            outputEl.innerText = `// Auditing headers & meta tags for indexability...`;
+            try {
+                const res = await fetch('/api/gateway/pre-flight-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urls[0] })
+                });
+                const data = await res.json();
+                outputEl.innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                outputEl.innerText = `// Pre-flight Audit Error: ${e.message}`;
             }
         }
 

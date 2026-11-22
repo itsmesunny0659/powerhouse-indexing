@@ -1,0 +1,12 @@
+[
+  {
+    "type": "service_account",
+    "project_id": "sample-indexing-tool-001",
+    "private_key_id": "sample_id",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC7vht3Ep1sESWX\n...[ADD_YOUR_PRIVATE_KEY]...\n-----END PRIVATE KEY-----\n",
+    "client_email": "indexing-bot@sample-indexing-tool-001.iam.gserviceaccount.com",
+    "client_id": "117525044717277913427",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token"
+  }
+]

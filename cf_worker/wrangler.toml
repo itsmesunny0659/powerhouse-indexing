@@ -1,0 +1,4 @@
+name = "indexing-proxy-v2"
+main = "index.js"
+compatibility_date = "2024-01-01"
+account_id = "ada8bc159e94d36098745b3ba9cfdece"

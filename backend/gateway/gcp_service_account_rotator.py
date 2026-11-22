@@ -1,0 +1,175 @@
+"""
+Enterprise Google Indexing API Rotator (Python Engine)
+Loads all Service Account JSON keys from service_accounts/ directory and data/keys.json.
+Rotates accounts round-robin with automatic 24h cooldown on 429 quota exhaustion.
+Directly invokes Google Indexing API v3 (URL_UPDATED).
+"""
+
+import os
+import json
+import time
+import logging
+from typing import List, Dict, Any, Optional
+import aiohttp
+from google.oauth2 import service_account
+from google.auth.transport.requests import Request
+
+logger = logging.getLogger(__name__)
+
+class GCPIndexingRotator:
+    def __init__(self, keys_dir: str = "service_accounts", keys_file: str = "data/keys.json"):
+        self.keys_dir = keys_dir
+        self.keys_file = keys_file
+        self.account_pool: List[Dict[str, Any]] = []
+        self.current_idx: int = 0
+        self.cooldowns: Dict[str, float] = {}  # email -> timestamp
+        self.load_keys()
+
+    def load_keys(self):
+        """Loads keys from service_accounts/ folder and data/keys.json."""
+        self.account_pool.clear()
+        
+        # 1. Load from service_accounts/*.json
+        if os.path.isdir(self.keys_dir):
+            for fname in os.listdir(self.keys_dir):
+                if fname.endswith(".json"):
+                    fpath = os.path.join(self.keys_dir, fname)
+                    try:
+                        with open(fpath, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            if "client_email" in data and "private_key" in data:
+                                self.account_pool.append({
+                                    "id": fname,
+                                    "email": data["client_email"],
+                                    "key_data": data
+                                })
+                    except Exception as e:
+                        logger.error(f"[GCP Rotator] Failed to load {fname}: {e}")
+
+        # 2. Load from data/keys.json array
+        if os.path.isfile(self.keys_file):
+            try:
+                with open(self.keys_file, "r", encoding="utf-8") as f:
+                    keys_list = json.load(f)
+                    if isinstance(keys_list, list):
+                        for i, data in enumerate(keys_list):
+                            if isinstance(data, dict) and "client_email" in data and "private_key" in data:
+                                # Avoid duplicate emails
+                                if not any(acc["email"] == data["client_email"] for acc in self.account_pool):
+                                    self.account_pool.append({
+                                        "id": f"keys_json_{i}_{data.get('project_id', 'sa')}",
+                                        "email": data["client_email"],
+                                        "key_data": data
+                                    })
+            except Exception as e:
+                logger.error(f"[GCP Rotator] Failed to load {self.keys_file}: {e}")
+
+        logger.info(f"[GCP Rotator] Loaded {len(self.account_pool)} service accounts.")
+
+    def _is_cooling_down(self, email: str) -> bool:
+        if email in self.cooldowns:
+            if time.time() > self.cooldowns[email]:
+                del self.cooldowns[email]
+                return False
+            return True
+        return False
+
+    def get_next_account(self) -> Optional[Dict[str, Any]]:
+        """Returns the next non-cooldown account in round-robin sequence."""
+        if not self.account_pool:
+            return None
+
+        attempts = 0
+        total = len(self.account_pool)
+        while attempts < total:
+            acc = self.account_pool[self.current_idx % total]
+            self.current_idx = (self.current_idx + 1) % total
+            if not self._is_cooling_down(acc["email"]):
+                return acc
+            attempts += 1
+        return None
+
+    def _get_access_token(self, key_data: Dict[str, Any]) -> str:
+        """Generates Google OAuth2 Bearer token for Indexing API."""
+        SCOPES = ["https://www.googleapis.com/auth/indexing"]
+        credentials = service_account.Credentials.from_service_account_info(
+            key_data, scopes=SCOPES
+        )
+        credentials.refresh(Request())
+        return credentials.token
+
+    async def submit_url(self, target_url: str, action: str = "URL_UPDATED", max_retries: int = 3) -> Dict[str, Any]:
+        """
+        Submits URL to Google Indexing API v3.
+        Rotates to next account if 429 quota or auth error occurs.
+        """
+        for attempt in range(max_retries):
+            account = self.get_next_account()
+            if not account:
+                return {
+                    "success": False,
+                    "target_url": target_url,
+                    "error": "All GCP service accounts in pool are in cooldown or none loaded."
+                }
+
+            email = account["email"]
+            try:
+                token = self._get_access_token(account["key_data"])
+                endpoint = "https://indexing.googleapis.com/v3/urlNotifications:publish"
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {token}"
+                }
+                payload = {
+                    "url": target_url,
+                    "type": action
+                }
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(endpoint, headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                        resp_text = await resp.text()
+                        if resp.status == 200:
+                            data = json.loads(resp_text)
+                            return {
+                                "success": True,
+                                "status": 200,
+                                "service_account": email,
+                                "target_url": target_url,
+                                "response": data
+                            }
+                        elif resp.status == 429:
+                            logger.warning(f"[GCP Rotator] 429 Quota exhausted for {email}. Adding 24h cooldown.")
+                            self.cooldowns[email] = time.time() + (24 * 3600)
+                            continue  # Retry with next account
+                        else:
+                            logger.warning(f"[GCP Rotator] API Status {resp.status} on {email}: {resp_text}")
+                            return {
+                                "success": False,
+                                "status": resp.status,
+                                "service_account": email,
+                                "target_url": target_url,
+                                "error": resp_text
+                            }
+
+            except Exception as e:
+                logger.error(f"[GCP Rotator] Error submitting via {email}: {e}")
+                if "quota" in str(e).lower() or "429" in str(e):
+                    self.cooldowns[email] = time.time() + (24 * 3600)
+                    continue
+
+        return {
+            "success": False,
+            "target_url": target_url,
+            "error": "Failed after rotating through available service accounts."
+        }
+
+    async def submit_batch(self, urls: List[str], action: str = "URL_UPDATED") -> List[Dict[str, Any]]:
+        """Submits a batch of URLs sequentially or micro-batched with delay."""
+        results = []
+        for url in urls:
+            res = await self.submit_url(url, action=action)
+            results.append(res)
+        return results
+
+# Singleton instance
+gcp_rotator = GCPIndexingRotator()

@@ -19,7 +19,12 @@ from backend.gateway.ping_services import PingEngine
 from backend.gateway.politepaul import PolitePaulClient
 from backend.gateway.feedburner_google import FeedburnerGoogleClient
 from backend.gateway.googlebot_summoner import GooglebotSummoner
-from fastapi.responses import Response, PlainTextResponse
+from backend.gateway.gcp_service_account_rotator import gcp_rotator
+from backend.gateway.trust_engine import trust_engine
+from backend.gateway.traffic_emulation import traffic_emulator
+from backend.gateway.gateway_shell import gateway_shell
+from backend.gateway.indexability_checker import IndexabilityChecker
+from fastapi.responses import Response, PlainTextResponse, HTMLResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
 
@@ -316,6 +321,173 @@ async def get_rss_feed():
 async def get_robots_txt():
     txt = "User-agent: *\nAllow: /\n\nSitemap: http://localhost:8000/sitemap.xml\n"
     return PlainTextResponse(content=txt)
+
+@app.get("/i/{url_id}")
+async def serve_gateway_page(url_id: str):
+    """
+    High-DA Gateway Reverse Proxy Page:
+    Embeds Schema.org JobPosting JSON-LD + canonical tag pointing to target URL.
+    """
+    target_url = gateway_shell.decode_url_id(url_id)
+    if not target_url:
+        raise HTTPException(status_code=404, detail="Indexing Gateway Page Expired or Invalid")
+    html_content = gateway_shell.generate_html_shell(target_url)
+    return HTMLResponse(content=html_content, headers={"X-Robots-Tag": "index, follow"})
+
+class GCPRotatorRequest(BaseModel):
+    urls: List[str]
+    action: str = "URL_UPDATED"
+
+@app.post("/api/gateway/gcp-indexing-rotator")
+async def gcp_rotator_endpoint(req: GCPRotatorRequest):
+    """
+    Enterprise Google Indexing API Multi-Account Rotator.
+    Rotates all service accounts in service_accounts/ & data/keys.json.
+    """
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+    results = await gcp_rotator.submit_batch(req.urls, action=req.action)
+    return {
+        "status": "completed",
+        "total": len(req.urls),
+        "active_service_accounts": len(gcp_rotator.account_pool),
+        "results": results
+    }
+
+class TrustSyndicateRequest(BaseModel):
+    url: str
+
+@app.post("/api/gateway/trust-syndicate")
+async def trust_syndicate_endpoint(req: TrustSyndicateRequest):
+    """
+    Tier-1 Authority Signal Engine:
+    Creates GitHub Gist (DA 96) and broadcasts Ping-O-Matic XML-RPC pings.
+    """
+    res = await trust_engine.syndicate_url(req.url)
+    return res
+
+class TrafficEmulationRequest(BaseModel):
+    url: str
+
+@app.post("/api/gateway/traffic-emulate")
+async def traffic_emulate_endpoint(req: TrafficEmulationRequest):
+    """
+    Traffic Emulation & Synthetic CrUX Beacon:
+    Spoofs residential networks (Jio 4G, Airtel) with info:<url> query headers.
+    """
+    res = await traffic_emulator.emulate_synthetic_signal(req.url)
+    return res
+
+class PreFlightCheckRequest(BaseModel):
+    url: str
+
+@app.post("/api/gateway/pre-flight-check")
+async def pre_flight_check_endpoint(req: PreFlightCheckRequest):
+    """
+    Pre-flight audit for noindex, nofollow, and x-robots-tag.
+    """
+    async with IndexabilityChecker() as checker:
+        res = await checker.audit_url(req.url)
+        return res
+
+class PowerhouseBlastRequest(BaseModel):
+    urls: List[str]
+    auto_crawl: bool = True
+    trigger_gcp_api: bool = True
+    trigger_trust_gist: bool = True
+    trigger_rich_results: bool = True
+    trigger_traffic_emulation: bool = True
+    trigger_ping_burst: bool = True
+
+@app.post("/api/gateway/powerhouse-blast")
+async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: BackgroundTasks):
+    """
+    The Ultimate Powerhouse Fast-Indexing Suite:
+    Executes all multi-vector secret techniques simultaneously for 2-5 min Googlebot inclusion.
+    """
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+
+    clean_urls = [u.strip() for u in req.urls if u.strip()]
+    audit_results = []
+    
+    # Pre-flight audit
+    async with IndexabilityChecker() as checker:
+        for u in clean_urls:
+            audit = await checker.audit_url(u)
+            audit_results.append(audit)
+
+    # 1. High-DA Gateway shell URLs generated
+    gateway_urls = [f"http://localhost:8000/i/{gateway_shell.encode_url_id(u)}" for u in clean_urls]
+
+    # 2. Priority Googlebot Summoner (search.google.com/test/rich-results + Mobile WRS)
+    summoner_results = []
+    if req.trigger_rich_results:
+        summoner = GooglebotSummoner()
+        for u in clean_urls:
+            res = await summoner.execute_rocket_pipeline(target_url=u)
+            summoner_results.append(res)
+
+    # 3. Google Indexing API Multi-Account Rotator
+    gcp_results = []
+    if req.trigger_gcp_api:
+        # Submit both target URLs and gateway wrapper URLs
+        gcp_results = await gcp_rotator.submit_batch(clean_urls)
+
+    # 4. Trust Engine (GitHub Gist DA 96 Signals)
+    trust_results = []
+    if req.trigger_trust_gist and clean_urls:
+        gist_res = await trust_engine.create_github_gist_signal(clean_urls[0])
+        trust_results.append(gist_res)
+
+    # 5. Traffic Emulation (Residential Jio / Airtel Spoofing)
+    traffic_results = []
+    if req.trigger_traffic_emulation:
+        for u in clean_urls:
+            t_res = await traffic_emulator.emulate_synthetic_signal(u)
+            traffic_results.append(t_res)
+
+    # 6. 10x Ping Burst Engine
+    ping_results = []
+    if req.trigger_ping_burst:
+        ping_res = await ping_engine.burst_10x_pings(
+            urls=clean_urls,
+            title="Powerhouse Accelerated Indexing Stream",
+            repeat_count=5,
+            delay_between_rounds=0.2
+        )
+        ping_results.append(ping_res)
+
+    # 7. Local crawler auto-index & IndexNow background push
+    if req.auto_crawl and not spider.status.is_running:
+        config = SpiderConfig(
+            seed_urls=clean_urls,
+            max_pages=len(clean_urls) + 10,
+            max_depth=1,
+            concurrency=5,
+            politeness_delay=0.2,
+            same_domain_only=False,
+            respect_robots=True
+        )
+        bg_tasks.add_task(spider.crawl, config)
+
+        async def push_indexnow():
+            async with IndexingGateway() as gw:
+                await gw.submit_indexnow(clean_urls)
+        bg_tasks.add_task(push_indexnow)
+
+    return {
+        "status": "POWERHOUSE_BLAST_EXECUTED",
+        "total_targets": len(clean_urls),
+        "gateway_wrappers": gateway_urls,
+        "preflight_audits": audit_results,
+        "googlebot_summoner": summoner_results,
+        "gcp_service_account_rotator": gcp_results,
+        "trust_engine_gist": trust_results,
+        "traffic_emulation": traffic_results,
+        "ping_burst": ping_results
+    }
+
 
 @app.get("/api/export/csv")
 async def export_csv():
