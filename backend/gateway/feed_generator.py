@@ -15,25 +15,42 @@ class FeedGenerator:
 
     def generate_sitemap_xml(self) -> str:
         """Generates standard sitemap.xml conformant to sitemaps.org protocol."""
-        with self.db.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT url, crawled_at, pagerank_score FROM documents ORDER BY pagerank_score DESC LIMIT 50000")
-            rows = cursor.fetchall()
-
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         xml = ['<?xml version="1.0" encoding="UTF-8"?>']
         xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
 
-        for r in rows:
-            url = escape(r["url"])
-            lastmod = (r["crawled_at"] or "").replace(" ", "T") + "Z" if r["crawled_at"] else time.strftime("%Y-%m-%dT%H:%M:%SZ")
-            priority = min(1.0, max(0.1, round((r["pagerank_score"] or 1.0) / 2.0, 1)))
-
+        # Always include baseline verified endpoints
+        baseline = [
+            (f"{self.base_url}/", "always", 1.0),
+            (f"{self.base_url}/news-sitemap.xml", "always", 1.0),
+            (f"{self.base_url}/feed.xml", "always", 0.9),
+        ]
+        for b_url, freq, pri in baseline:
             xml.append('  <url>')
-            xml.append(f'    <loc>{url}</loc>')
-            xml.append(f'    <lastmod>{lastmod}</lastmod>')
-            xml.append('    <changefreq>daily</changefreq>')
-            xml.append(f'    <priority>{priority:.1f}</priority>')
+            xml.append(f'    <loc>{escape(b_url)}</loc>')
+            xml.append(f'    <lastmod>{now_iso}</lastmod>')
+            xml.append(f'    <changefreq>{freq}</changefreq>')
+            xml.append(f'    <priority>{pri:.1f}</priority>')
             xml.append('  </url>')
+
+        try:
+            with self.db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT url, crawled_at, pagerank_score FROM documents ORDER BY pagerank_score DESC LIMIT 50000")
+                rows = cursor.fetchall()
+                for r in rows:
+                    url = escape(r["url"])
+                    lastmod = (r["crawled_at"] or "").replace(" ", "T") + "Z" if r["crawled_at"] else now_iso
+                    priority = min(1.0, max(0.1, round((r["pagerank_score"] or 1.0) / 2.0, 1)))
+
+                    xml.append('  <url>')
+                    xml.append(f'    <loc>{url}</loc>')
+                    xml.append(f'    <lastmod>{lastmod}</lastmod>')
+                    xml.append('    <changefreq>daily</changefreq>')
+                    xml.append(f'    <priority>{priority:.1f}</priority>')
+                    xml.append('  </url>')
+        except Exception:
+            pass
 
         xml.append('</urlset>')
         return "\n".join(xml)

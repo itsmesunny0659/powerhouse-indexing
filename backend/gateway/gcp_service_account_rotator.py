@@ -191,9 +191,9 @@ class GCPIndexingRotator:
 
             except Exception as e:
                 logger.error(f"[GCP Rotator] Error submitting via {email}: {e}")
-                if "quota" in str(e).lower() or "429" in str(e):
-                    self.cooldowns[email] = time.time() + (24 * 3600)
-                    continue
+                # Cooldown broken or auth-failed account so rotator tries next active account
+                self.cooldowns[email] = time.time() + (24 * 3600)
+                continue
 
         return {
             "success": False,

@@ -49,6 +49,7 @@ class GatewayShellEngine:
     <title>{title}</title>
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="{target_url}">
+    <meta http-equiv="refresh" content="2;url={target_url}">
     <meta name="description" content="{description}">
 
     <!-- SCHEMA.ORG JOBPOSTING / PRIORITY CRAWL INJECTION -->

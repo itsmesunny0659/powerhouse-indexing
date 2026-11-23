@@ -321,7 +321,7 @@ async def get_rss_feed():
 
 @app.get("/robots.txt")
 async def get_robots_txt():
-    txt = "User-agent: *\nAllow: /\nAllow: /news/\nAllow: /i/\n\nSitemap: http://localhost:8000/sitemap.xml\nSitemap: http://localhost:8000/news-sitemap.xml\n"
+    txt = "User-agent: *\nAllow: /\nAllow: /news/\nAllow: /i/\n\nSitemap: https://powerhouse-indexing-zvxh.vercel.app/sitemap.xml\nSitemap: https://powerhouse-indexing-zvxh.vercel.app/news-sitemap.xml\n"
     return PlainTextResponse(content=txt)
 
 @app.get("/google{code}.html")
@@ -341,9 +341,9 @@ async def get_news_sitemap():
     """
     sample_news = active_news_items if active_news_items else [
         {
-            "url": "http://localhost:8000/news/u_live_wire",
+            "url": "https://powerhouse-indexing-zvxh.vercel.app/news/u_live_wire",
             "title": "Global Breaking News Wire: Priority Search Ingestion Active",
-            "published_at": "2026-11-22T19:00:00Z"
+            "published_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         }
     ]
     xml_content = google_news_engine.generate_google_news_sitemap_xml(sample_news)
@@ -361,7 +361,12 @@ async def serve_news_gateway(url_id: str):
         title="BREAKING: High Priority Global News Wire Dispatch",
         summary="Urgent live bulletin broadcast with high editorial verification and canonical priority indexing."
     )
-    return HTMLResponse(content=html_content, headers={"X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large"})
+    headers = {
+        "X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large",
+        "Link": f'<{target_url}>; rel="canonical"',
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+    }
+    return HTMLResponse(content=html_content, headers=headers)
 
 class GoogleNewsPriorityRequest(BaseModel):
     urls: List[str]
@@ -492,7 +497,12 @@ async def serve_gateway_page(url_id: str):
     if not target_url:
         raise HTTPException(status_code=404, detail="Indexing Gateway Page Expired or Invalid")
     html_content = gateway_shell.generate_html_shell(target_url)
-    return HTMLResponse(content=html_content, headers={"X-Robots-Tag": "index, follow"})
+    headers = {
+        "X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large",
+        "Link": f'<{target_url}>; rel="canonical"',
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+    }
+    return HTMLResponse(content=html_content, headers=headers)
 
 class GCPRotatorRequest(BaseModel):
     urls: List[str]
