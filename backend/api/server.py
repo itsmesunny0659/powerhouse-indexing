@@ -585,8 +585,10 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
             audit = await checker.audit_url(u)
             audit_results.append(audit)
 
-    # 1. High-DA Gateway shell URLs generated
-    gateway_urls = [f"http://localhost:8000/i/{gateway_shell.encode_url_id(u)}" for u in clean_urls]
+    # 1. High-DA Gateway shell URLs generated on live verified domain
+    BASE_HUB = "https://powerhouse-indexing-zvxh.vercel.app"
+    gateway_urls = [f"{BASE_HUB}/i/{gateway_shell.encode_url_id(u)}" for u in clean_urls]
+    news_urls = [f"{BASE_HUB}/news/{gateway_shell.encode_url_id(u)}" for u in clean_urls]
 
     # 2. Priority Googlebot Summoner (search.google.com/test/rich-results + Mobile WRS)
     summoner_results = []
@@ -595,12 +597,22 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
         for u in clean_urls:
             res = await summoner.execute_rocket_pipeline(target_url=u)
             summoner_results.append(res)
+        for g_url in gateway_urls[:3]:
+            try:
+                g_res = await summoner.execute_rocket_pipeline(target_url=g_url)
+                summoner_results.append(g_res)
+            except Exception:
+                pass
 
     # 3. Google Indexing API Multi-Account Rotator
+    # Submits BOTH the verified gateway shells AND the target URLs
+    # Since powerhouse-indexing-zvxh.vercel.app is verified in GSC, Googlebot crawls the shell!
     gcp_results = []
     if req.trigger_gcp_api:
-        # Submit both target URLs and gateway wrapper URLs
-        gcp_results = await gcp_rotator.submit_batch(clean_urls)
+        all_to_index = []
+        for g_u, n_u, raw_u in zip(gateway_urls, news_urls, clean_urls):
+            all_to_index.extend([g_u, n_u, raw_u])
+        gcp_results = await gcp_rotator.submit_batch(all_to_index)
 
     # 4. Trust Engine (GitHub Gist DA 96 Signals)
     trust_results = []
@@ -619,10 +631,11 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
     ping_results = []
     if req.trigger_ping_burst:
         ping_res = await ping_engine.burst_10x_pings(
-            urls=clean_urls,
+            urls=clean_urls + gateway_urls,
             title="Powerhouse Accelerated Indexing Stream",
-            repeat_count=5,
-            delay_between_rounds=0.2
+            custom_rss_url=f"{BASE_HUB}/feed.xml",
+            repeat_count=3,
+            delay_between_rounds=0.1
         )
         ping_results.append(ping_res)
 
@@ -640,8 +653,8 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
         bg_tasks.add_task(spider.crawl, config)
 
         async def push_indexnow():
-            async with IndexingGateway() as gw:
-                await gw.submit_indexnow(clean_urls)
+            async with IndexingGateway(host_domain="powerhouse-indexing-zvxh.vercel.app") as gw:
+                await gw.submit_indexnow(clean_urls + gateway_urls)
         bg_tasks.add_task(push_indexnow)
 
     return {
@@ -649,12 +662,205 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
         "total_targets": len(clean_urls),
         "bot_swarm_200_fleet": bot_swarm_results,
         "gateway_wrappers": gateway_urls,
+        "news_wrappers": news_urls,
         "preflight_audits": audit_results,
         "googlebot_summoner": summoner_results,
         "gcp_service_account_rotator": gcp_results,
         "trust_engine_gist": trust_results,
         "traffic_emulation": traffic_results,
         "ping_burst": ping_results
+    }
+
+
+class MasterInstantIndexRequest(BaseModel):
+    urls: List[str]
+    host_domain: Optional[str] = "powerhouse-indexing-zvxh.vercel.app"
+
+@app.post("/api/gateway/master-instant-index")
+async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks: BackgroundTasks):
+    """
+    MASTER ALL-IN-ONE 1-CLICK INSTANT INDEXING SUPER ENGINE:
+    Submits URLs across all 8 vectors simultaneously in parallel:
+    1. High-DA Verified Gateway Shells (/i/{url_id} & /news/{url_id})
+    2. Google Indexing API v3 with 12 Service Accounts on verified shells + targets
+    3. Google News Priority Engine (/news-sitemap.xml + NewsArticle schema)
+    4. Priority 0 Googlebot Summoner (search.google.com/test/rich-results + Mobile WRS)
+    5. 200+ Fleet Assault (100 real Googlebot variants + 100 global search crawlers)
+    6. WebSub (PubSubHubbub) + Sitemaps Ping across Google, FeedBurner, Ping-O-Matic
+    7. IndexNow Protocol (Bing, Yandex, Seznam, Naver)
+    8. GitHub Gist DA 96 Trust Signal & Residential CrUX Traffic Emulation
+    """
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+
+    clean_urls = [u.strip() for u in req.urls if u.strip()]
+    if not clean_urls:
+        raise HTTPException(status_code=400, detail="No valid URLs provided")
+
+    host = (req.host_domain or "powerhouse-indexing-zvxh.vercel.app").strip()
+    base_url = f"https://{host}"
+
+    # 1. Generate gateway and news shells on the verified Search Console domain
+    gateway_urls = []
+    news_urls = []
+    for u in clean_urls:
+        enc_id = gateway_shell.encode_url_id(u)
+        g_url = f"{base_url}/i/{enc_id}"
+        n_url = f"{base_url}/news/{enc_id}"
+        gateway_urls.append(g_url)
+        news_urls.append(n_url)
+
+        # Enroll in Google News live broadcast pool
+        active_news_items.insert(0, {
+            "url": n_url,
+            "target_canonical": u,
+            "title": f"BREAKING WIRE: Urgent Priority Indexing for {u.split('//')[-1].split('/')[0]}",
+            "published_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        })
+    del active_news_items[100:]
+
+    # All targets submitted to Google Indexing API v3
+    # Both verified shells and raw target URLs
+    indexing_api_targets = []
+    for g_u, n_u, raw_u in zip(gateway_urls, news_urls, clean_urls):
+        indexing_api_targets.extend([g_u, n_u, raw_u])
+
+    summoner = GooglebotSummoner()
+
+    # Vector 1: Google Indexing API with 12 rotated Service Accounts
+    async def run_gcp_indexing():
+        return await gcp_rotator.submit_batch(indexing_api_targets)
+
+    # Vector 2: Priority 0 Googlebot Summoner (search.google.com/test/rich-results)
+    async def run_googlebot_summoner():
+        results = []
+        for g_url in gateway_urls[:3]:
+            try:
+                res = await summoner.execute_rocket_pipeline(g_url)
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": g_url})
+        return results
+
+    # Vector 3: 200+ Real Googlebots & Global Crawlers Assault
+    async def run_bot_swarm():
+        results = []
+        for u in clean_urls[:2]:
+            try:
+                res = await bot_swarm_engine.launch_full_200_bot_assault(u)
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": u})
+        return results
+
+    # Vector 4: Google WebSub & Google Sitemaps Pings
+    async def run_websub_pings():
+        results = []
+        try:
+            r1 = await google_news_engine.ping_google_news_sub(f"{base_url}/news-sitemap.xml")
+            results.append(r1)
+        except Exception as e:
+            results.append({"websub_news": str(e)})
+        try:
+            r2 = await google_news_engine.ping_google_news_sub(f"{base_url}/feed.xml")
+            results.append(r2)
+        except Exception as e:
+            results.append({"websub_feed": str(e)})
+        return results
+
+    # Vector 5: 10x Ping Burst across Ping-O-Matic, FeedBurner, Twingly
+    async def run_ping_burst():
+        try:
+            return await ping_engine.burst_10x_pings(
+                urls=gateway_urls + clean_urls,
+                title="Powerhouse Master Live Syndication",
+                custom_rss_url=f"{base_url}/feed.xml",
+                repeat_count=3,
+                delay_between_rounds=0.1
+            )
+        except Exception as e:
+            return {"error": str(e)}
+
+    # Vector 6: IndexNow Protocol (Bing, Yandex, Seznam, Naver)
+    async def run_indexnow():
+        try:
+            async with IndexingGateway(host_domain=host) as gw:
+                return await gw.submit_indexnow(clean_urls + gateway_urls)
+        except Exception as e:
+            return {"error": str(e)}
+
+    # Vector 7: Traffic Emulation (Residential Jio / Airtel Spoofing)
+    async def run_traffic_emulation():
+        results = []
+        for u in clean_urls[:3]:
+            try:
+                res = await traffic_emulator.emulate_synthetic_signal(u)
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": u})
+        return results
+
+    # Vector 8: GitHub Gist DA 96 Trust Signal
+    async def run_trust_gist():
+        if clean_urls:
+            try:
+                return await trust_engine.create_github_gist_signal(clean_urls[0])
+            except Exception as e:
+                return {"error": str(e)}
+        return {}
+
+    # Fire all vectors in parallel for instant execution!
+    (
+        gcp_res,
+        summoner_res,
+        swarm_res,
+        websub_res,
+        ping_res,
+        indexnow_res,
+        traffic_res,
+        gist_res
+    ) = await asyncio.gather(
+        run_gcp_indexing(),
+        run_googlebot_summoner(),
+        run_bot_swarm(),
+        run_websub_pings(),
+        run_ping_burst(),
+        run_indexnow(),
+        run_traffic_emulation(),
+        run_trust_gist(),
+        return_exceptions=True
+    )
+
+    # Ingest into local crawler / database
+    if not spider.status.is_running:
+        config = SpiderConfig(
+            seed_urls=clean_urls,
+            max_pages=len(clean_urls) + 5,
+            max_depth=1,
+            concurrency=3,
+            politeness_delay=0.1,
+            same_domain_only=False,
+            respect_robots=True
+        )
+        bg_tasks.add_task(spider.crawl, config)
+
+    return {
+        "status": "ALL_VECTORS_FIRED_SIMULTANEOUSLY",
+        "total_submitted": len(clean_urls),
+        "gateway_domain": host,
+        "verified_gateway_shells": gateway_urls,
+        "google_news_shells": news_urls,
+        "active_service_accounts": len(gcp_rotator.account_pool),
+        "telemetry": {
+            "gcp_service_accounts_rotator": gcp_res if not isinstance(gcp_res, Exception) else str(gcp_res),
+            "googlebot_summoner": summoner_res if not isinstance(summoner_res, Exception) else str(summoner_res),
+            "bot_swarm_fleet_assault": swarm_res if not isinstance(swarm_res, Exception) else str(swarm_res),
+            "websub_and_sitemaps_pings": websub_res if not isinstance(websub_res, Exception) else str(websub_res),
+            "ping_cluster_burst": ping_res if not isinstance(ping_res, Exception) else str(ping_res),
+            "indexnow_protocol": indexnow_res if not isinstance(indexnow_res, Exception) else str(indexnow_res),
+            "traffic_emulation": traffic_res if not isinstance(traffic_res, Exception) else str(traffic_res),
+            "github_gist_da96": gist_res if not isinstance(gist_res, Exception) else str(gist_res)
+        }
     }
 
 

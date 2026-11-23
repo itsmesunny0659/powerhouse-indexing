@@ -64,6 +64,44 @@ class GCPIndexingRotator:
             except Exception as e:
                 logger.error(f"[GCP Rotator] Failed to load {self.keys_file}: {e}")
 
+        # 3. Load from data/vault_keys.dat or environment variables (Production Safe Vault)
+        vault_candidates = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "vault_keys.dat"),
+            "data/vault_keys.dat",
+            os.path.join(os.getcwd(), "data", "vault_keys.dat")
+        ]
+        vault_raw = None
+        for vp in vault_candidates:
+            if os.path.isfile(vp):
+                try:
+                    with open(vp, "r", encoding="utf-8") as vf:
+                        vault_raw = vf.read().strip()
+                    if vault_raw:
+                        break
+                except Exception:
+                    pass
+
+        if not vault_raw:
+            vault_raw = os.environ.get("GCP_SA_KEYS_BASE64") or os.environ.get("GCP_KEYS_VAULT")
+
+        if vault_raw:
+            try:
+                import zlib
+                import base64
+                decompressed = zlib.decompress(base64.b64decode(vault_raw.encode("ascii")))
+                vault_keys = json.loads(decompressed)
+                if isinstance(vault_keys, list):
+                    for i, data in enumerate(vault_keys):
+                        if isinstance(data, dict) and "client_email" in data and "private_key" in data:
+                            if not any(acc["email"] == data["client_email"] for acc in self.account_pool):
+                                self.account_pool.append({
+                                    "id": f"vault_{i}_{data.get('project_id', 'sa')}",
+                                    "email": data["client_email"],
+                                    "key_data": data
+                                })
+            except Exception as e:
+                logger.error(f"[GCP Rotator] Failed to decompress vault keys: {e}")
+
         logger.info(f"[GCP Rotator] Loaded {len(self.account_pool)} service accounts.")
 
     def _is_cooling_down(self, email: str) -> bool:

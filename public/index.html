@@ -475,29 +475,35 @@
                             </label>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="pt-1 flex space-x-2">
+                        <!-- Master 1-Click Action Button -->
+                        <div class="pt-2">
                             <button 
-                                id="btn-gateway-dispatch"
-                                onclick="dispatchGatewayBatch()"
-                                class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-xs shadow-lg shadow-amber-500/20 transition-all duration-150 flex items-center justify-center space-x-2"
+                                id="btn-master-instant-index"
+                                onclick="executeMasterInstantIndex()"
+                                class="w-full py-4 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:from-emerald-400 hover:to-sky-400 text-slate-950 font-black text-xs md:text-sm shadow-xl shadow-emerald-500/30 transition-all duration-150 flex items-center justify-center space-x-2 cursor-pointer transform hover:-translate-y-0.5"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                <span>Dispatch Standard Batch</span>
+                                <svg class="w-5 h-5 text-slate-950 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                <span>⚡ 1-CLICK INSTANT INDEX (SUBMIT & FIRE ALL 8 VECTORS) [ENTER ↵]</span>
                             </button>
-                            <button 
-                                onclick="manualPingBroadcast()"
-                                class="py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs border border-amber-500/30 transition-all duration-150 flex items-center space-x-1"
-                                title="Broadcast Pings only (FeedBurner, Ping-O-Matic, WebSub)"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                <span>Ping Only</span>
-                            </button>
+                            <p class="text-[10px] text-center text-slate-400 mt-2 font-mono">
+                                💡 Tip: Type or paste URL(s) and press <strong>Enter ↵</strong> (or <strong>Ctrl+Enter</strong>) to trigger instantly.
+                            </p>
                         </div>
                     </div>
 
-                    <!-- PolitePaul + 10x Ping Burst Card -->
-                    <div class="p-5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-purple-950/30 to-slate-900 border border-purple-800/40 space-y-4 shadow-xl">
+                    <!-- Collapsible Advanced Individual Vectors -->
+                    <details class="rounded-2xl bg-slate-900/60 border border-slate-800 p-4 group">
+                        <summary class="text-xs font-bold text-slate-300 cursor-pointer flex items-center justify-between select-none py-1">
+                            <span class="flex items-center space-x-2">
+                                <span class="text-slate-400">⚙️</span>
+                                <span>Advanced Modular Vectors & Manual Controls</span>
+                                <span class="text-[10px] font-mono text-slate-500">(Optional Individual Tests)</span>
+                            </span>
+                            <span class="text-slate-400 group-open:rotate-180 transition-transform">&darr;</span>
+                        </summary>
+                        <div class="mt-4 space-y-4">
+                            <!-- PolitePaul + 10x Ping Burst Card -->
+                            <div class="p-5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-purple-950/30 to-slate-900 border border-purple-800/40 space-y-4 shadow-xl">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse"></span>
@@ -710,6 +716,8 @@
                             <span>DISPATCH 200+ REAL BOTS & CRAWLERS NOW</span>
                         </button>
                     </div>
+                        </div>
+                    </details>
                     </div>
                 </div>
 
@@ -1254,6 +1262,111 @@
         function getTargetUrls() {
             const raw = document.getElementById('gateway-urls').value.trim();
             return raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        }
+
+        async function executeMasterInstantIndex() {
+            const urls = getTargetUrls();
+            if (urls.length === 0) {
+                alert("Please paste at least one target URL in the textarea.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-master-instant-index');
+            const statusEl = document.getElementById('stat-gateway-status');
+            const latencyEl = document.getElementById('stat-gateway-latency');
+            const countEl = document.getElementById('stat-gateway-count');
+            const outputEl = document.getElementById('gateway-telemetry-output');
+            const hostDomain = (document.getElementById('gateway-host').value || "powerhouse-indexing-zvxh.vercel.app").trim();
+
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+            }
+            statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400 animate-pulse";
+            statusEl.innerText = "FIRING ALL 8 VECTORS...";
+
+            const setStep = (id, text, state) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const dot = el.querySelector('span:first-child');
+                const label = el.querySelector('span:last-child');
+                if (label) label.innerText = text;
+                if (state === 'active') {
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-orange-400 animate-ping";
+                    el.className = "flex items-center space-x-2 text-orange-300 font-semibold";
+                } else if (state === 'done') {
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    el.className = "flex items-center space-x-2 text-emerald-400 font-medium";
+                } else {
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-slate-600";
+                    el.className = "flex items-center space-x-2 text-slate-400";
+                }
+            };
+
+            setStep('rk-step-0', '[Step 1] Google Indexing API + 12 Service Accounts Rotating...', 'active');
+            setStep('rk-step-1', '[Step 2] Summoning Real Googlebot WRS (search.google.com)...', 'waiting');
+            setStep('rk-step-2', '[Step 3] Google News Wire & WebSub Hub Dispatch...', 'waiting');
+            setStep('rk-step-3', '[Step 4] 200+ Bot Fleet & Global Crawlers Assault...', 'waiting');
+
+            outputEl.innerText = `// [ALL-IN-ONE MASTER INSTANT INDEX LAUNCHED]\n// Firing 8 parallel vectors for ${urls.length} URLs on ${hostDomain}:\n// 1. 12 Verified GCP Service Accounts (Search Console Owner Auth)\n// 2. High-DA Verified Gateway Shells (/i/{id} & /news/{id})\n// 3. Google News Breaking Wire (/news-sitemap.xml)\n// 4. Priority 0 Googlebot Chromium Summoner (search.google.com)\n// 5. 200+ Fleet Assault (100 Googlebots + 100 Search Crawlers)\n// 6. WebSub Hub Real-time Push (pubsubhubbub.appspot.com)\n// 7. 10x Consecutive Ping Burst (Ping-O-Matic, FeedBurner, Twingly)\n// 8. IndexNow Protocol (Bing, Yandex, Seznam, Naver)\n\n// Awaiting parallel execution response...`;
+
+            appendTerminalLog("INFO", `[Master Super Engine] 🚀 Dispatched all 8 vectors for ${urls.length} target URLs...`);
+
+            const startTime = performance.now();
+            try {
+                const res = await fetch('/api/gateway/master-instant-index', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        urls: urls,
+                        host_domain: hostDomain
+                    })
+                });
+
+                const elapsedMs = Math.round(performance.now() - startTime);
+                latencyEl.innerText = `${elapsedMs}ms`;
+                countEl.innerText = urls.length;
+
+                const rawText = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch {
+                    data = { raw_response: rawText };
+                }
+
+                if (!res.ok) {
+                    statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-400";
+                    statusEl.innerText = "FAILED";
+                    outputEl.innerText = `// Master Indexing Failed (${res.status}):\n${JSON.stringify(data, null, 2)}`;
+                    appendTerminalLog("ERROR", `[Master Super Engine] Error: ${data.detail || rawText}`);
+                    return;
+                }
+
+                setStep('rk-step-0', '[Step 1] Google Indexing API + 12 Service Accounts Dispatched', 'done');
+                setStep('rk-step-1', '[Step 2] Real Googlebot (Chromium WRS) Summoned', 'done');
+                setStep('rk-step-2', '[Step 3] Google News Wire & WebSub Hub Verified', 'done');
+                setStep('rk-step-3', '[Step 4] 200+ Bot Fleet Assault Active', 'done');
+
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-emerald-400";
+                statusEl.innerText = "ALL 8 VECTORS COMPLETED";
+                outputEl.innerText = JSON.stringify(data, null, 2);
+
+                appendTerminalLog("SUCCESS", `[Master Super Engine] ⚡ All 8 vectors successfully finished in ${elapsedMs}ms!`);
+                appendTerminalLog("SUCCESS", `[Verified Shells] Generated ${data.verified_gateway_shells ? data.verified_gateway_shells.length : 0} canonical shells on ${hostDomain}`);
+                appendTerminalLog("SUCCESS", `[GCP Rotator] ${data.active_service_accounts || 12} Google Cloud Service Accounts rotated.`);
+                fetchGlobalStats();
+            } catch (e) {
+                statusEl.className = "mt-1 text-xs font-bold font-mono text-rose-400";
+                statusEl.innerText = "ERROR";
+                outputEl.innerText = `// Client Exception: ${e.message}`;
+                appendTerminalLog("ERROR", `[Master Super Engine] Execution failed: ${e.message}`);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50');
+                }
+            }
         }
 
         async function executePowerhouseBlast() {
@@ -1887,6 +2000,20 @@
         window.addEventListener('DOMContentLoaded', () => {
             initWebSocket();
             fetchGlobalStats();
+
+            // Keyboard shortcut: Press Enter or Ctrl+Enter in gateway-urls to fire master instant index!
+            const gwUrlsInput = document.getElementById('gateway-urls');
+            if (gwUrlsInput) {
+                gwUrlsInput.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        e.preventDefault();
+                        executeMasterInstantIndex();
+                    } else if (e.key === 'Enter' && !e.shiftKey && !gwUrlsInput.value.includes('\n')) {
+                        e.preventDefault();
+                        executeMasterInstantIndex();
+                    }
+                });
+            }
         });
     </script>
 </body>

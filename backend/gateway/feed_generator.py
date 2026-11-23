@@ -9,7 +9,7 @@ class FeedGenerator:
     1. XML Sitemap (sitemap.xml) for automated search engine consumption
     2. RSS 2.0 Feed (feed.xml) for Google WebSub real-time hub publishing
     """
-    def __init__(self, db: SearchDB, base_url: str = "http://localhost:8000"):
+    def __init__(self, db: SearchDB, base_url: str = "https://powerhouse-indexing-zvxh.vercel.app"):
         self.db = db
         self.base_url = base_url
 

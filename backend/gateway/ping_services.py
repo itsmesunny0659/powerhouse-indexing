@@ -54,7 +54,7 @@ class PingEngine:
     4. Back-to-Back 10x Burst mode for guaranteed discovery
     """
 
-    def __init__(self, site_name: str = "ApexSearch Live Feed", site_url: str = "http://localhost:8000"):
+    def __init__(self, site_name: str = "ApexSearch Live Feed", site_url: str = "https://powerhouse-indexing-zvxh.vercel.app"):
         self.site_name = site_name
         self.site_url = site_url
         self.services = PING_SERVICES
