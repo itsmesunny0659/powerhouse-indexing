@@ -25,26 +25,24 @@ class GoogleSitesParasiteEngine:
         ]
 
     def extract_keyword_from_url(self, url: str) -> str:
-        """Extracts readable keyword/topic from URL path or domain."""
+        """Extracts readable keyword/topic from URL path or domain with smart generic slug skipping."""
+        generic_slugs = {'home', 'index', 'default', 'main', 'view', 'posts', 'post', 'p', 'article', 'articles', 'news', 'blog', 'item', 'page', 'pages', 'en', 'us'}
         try:
             parsed = urllib.parse.urlparse(url)
             path = parsed.path.strip("/")
             if path:
-                # Get last meaningful slug
-                slugs = [s for s in path.split("/") if s]
-                last_slug = slugs[-1]
-                # Strip numeric IDs or extensions
-                cleaned = re.sub(r"^\d+[\-_]?", "", last_slug)
-                cleaned = re.sub(r"\.(html|php|aspx|jsp)$", "", cleaned)
-                # Replace dashes, underscores, pluses with spaces
-                words = re.sub(r"[\-_+]+", " ", cleaned).strip()
-                if len(words) >= 3:
-                    return words
-            # Fallback to domain name
+                slugs = [s for s in path.split("/") if s and s.lower() not in generic_slugs]
+                if slugs:
+                    last_slug = slugs[-1]
+                    cleaned = re.sub(r"^\d+[\-_]?", "", last_slug)
+                    cleaned = re.sub(r"\.(html|php|aspx|jsp)$", "", cleaned)
+                    words = re.sub(r"[\-_+]+", " ", cleaned).strip()
+                    if len(words) >= 3:
+                        return words
             domain = parsed.netloc.split(":")[0]
             domain_parts = domain.split(".")
             if len(domain_parts) >= 2:
-                name = domain_parts[-2] if domain_parts[-1] in ("com", "net", "org", "app", "io") else domain_parts[0]
+                name = domain_parts[-2] if domain_parts[-1] in ("com", "net", "org", "app", "io", "site", "xyz") else domain_parts[0]
                 return name.replace("-", " ")
         except Exception:
             pass

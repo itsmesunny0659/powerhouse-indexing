@@ -39,26 +39,28 @@ class GatewayShellEngine:
             return None
 
     def extract_keywords(self, url: str) -> str:
-        """Extracts readable keyword from target URL."""
+        """Extracts readable keyword from target URL with smart generic slug skipping."""
+        generic_slugs = {'home', 'index', 'default', 'main', 'view', 'posts', 'post', 'p', 'article', 'articles', 'news', 'blog', 'item', 'page', 'pages', 'en', 'us'}
         try:
             parsed = urllib.parse.urlparse(url)
             path = parsed.path.strip("/")
             if path:
-                slugs = [s for s in path.split("/") if s]
-                last_slug = slugs[-1]
-                cleaned = re.sub(r"^\d+[\-_]?", "", last_slug)
-                cleaned = re.sub(r"\.(html|php|aspx|jsp)$", "", cleaned)
-                words = re.sub(r"[\-_+]+", " ", cleaned).strip()
-                if len(words) >= 3:
-                    return words
+                slugs = [s for s in path.split("/") if s and s.lower() not in generic_slugs]
+                if slugs:
+                    last_slug = slugs[-1]
+                    cleaned = re.sub(r"^\d+[\-_]?", "", last_slug)
+                    cleaned = re.sub(r"\.(html|php|aspx|jsp)$", "", cleaned)
+                    words = re.sub(r"[\-_+]+", " ", cleaned).strip()
+                    if len(words) >= 3:
+                        return words
             domain = parsed.netloc.split(":")[0]
             domain_parts = domain.split(".")
             if len(domain_parts) >= 2:
-                name = domain_parts[-2] if domain_parts[-1] in ("com", "net", "org", "app", "io") else domain_parts[0]
+                name = domain_parts[-2] if domain_parts[-1] in ("com", "net", "org", "app", "io", "site", "xyz") else domain_parts[0]
                 return name.replace("-", " ")
         except Exception:
             pass
-        return "Official Resource"
+        return "Priority Resource"
 
     def generate_html_shell(self, target_url: str, title: Optional[str] = None, description: Optional[str] = None) -> str:
         """
