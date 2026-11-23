@@ -778,15 +778,17 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
     async def run_gcp_indexing():
         return await gcp_rotator.submit_batch(indexing_api_targets)
 
-    # Vector 2: Priority 0 Googlebot Summoner (search.google.com/test/rich-results)
+    # Vector 2: Priority 0 Googlebot Summoner (search.google.com/test/rich-results + Google Docs + WRS)
     async def run_googlebot_summoner():
         results = []
-        for g_url in gateway_urls[:3]:
+        # Dispatch Googlebot Summoner on BOTH the user's raw target URLs AND the verified gateway shells!
+        all_summon_targets = clean_urls[:5] + gateway_urls[:3]
+        for target in all_summon_targets:
             try:
-                res = await summoner.execute_rocket_pipeline(g_url)
+                res = await summoner.execute_rocket_pipeline(target)
                 results.append(res)
             except Exception as e:
-                results.append({"error": str(e), "url": g_url})
+                results.append({"error": str(e), "url": target})
         return results
 
     # Vector 3: 200+ Real Googlebots & Global Crawlers Assault
@@ -832,7 +834,11 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
     async def run_indexnow():
         try:
             async with IndexingGateway(host_domain=host) as gw:
-                return await gw.submit_indexnow(clean_urls + gateway_urls)
+                # IndexNow requires all URLs in payload to strictly match host_domain
+                valid_host_urls = [u for u in (gateway_urls + news_urls) if host in u]
+                if not valid_host_urls:
+                    valid_host_urls = [f"https://{host}/"]
+                return await gw.submit_indexnow(valid_host_urls)
         except Exception as e:
             return {"error": str(e)}
 

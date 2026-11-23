@@ -99,15 +99,15 @@ class GooglebotSummoner:
                         "message": f"Real Googlebot (WRS Chromium) visited and rendered target in {elapsed_sec}s!"
                     }
                 else:
-                    # Fallback Summoner: Google Translate & Multi-Search Proxy Crawlers
-                    google_proxy_url = f"https://translate.google.com/m?sl=auto&tl=en&q={urllib.parse.quote(target_url, safe='')}"
+                    # Fallback Summoner: Google Docs Viewer, Wayback Machine, & Proxy Crawlers
                     try:
-                        await client.get(google_proxy_url, timeout=10.0)
+                        doc_url = f"https://docs.google.com/viewer?url={urllib.parse.quote(target_url, safe='')}"
+                        await client.get(doc_url, timeout=10.0)
                     except Exception:
                         pass
 
-                    archive_url = f"https://web.archive.org/save/{target_url}"
                     try:
+                        archive_url = f"https://web.archive.org/save/{target_url}"
                         await client.get(archive_url, timeout=8.0)
                     except Exception:
                         pass
@@ -118,7 +118,7 @@ class GooglebotSummoner:
                         "target_url": target_url,
                         "status_code": resp.status_code,
                         "bot_visit_time_sec": elapsed_sec,
-                        "message": f"Dispatched Google Proxy Crawler & Global Archive Bot (HTTP {resp.status_code})"
+                        "message": "Dispatched Google Docs Cache Crawler & Global Archive Bot"
                     }
 
             except Exception as e:
