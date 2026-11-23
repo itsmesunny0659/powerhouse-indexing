@@ -23,6 +23,7 @@ class GCPIndexingRotator:
         self.account_pool: List[Dict[str, Any]] = []
         self.current_idx: int = 0
         self.cooldowns: Dict[str, float] = {}  # email -> timestamp
+        self.token_cache: Dict[str, tuple] = {}  # email -> (token, expire_ts)
         self.load_keys()
 
     def load_keys(self):
@@ -127,21 +128,29 @@ class GCPIndexingRotator:
             attempts += 1
         return None
 
-    def _get_access_token(self, key_data: Dict[str, Any]) -> str:
-        """Generates Google OAuth2 Bearer token for Indexing API."""
+    def _get_access_token(self, email: str, key_data: Dict[str, Any]) -> str:
+        """Generates Google OAuth2 Bearer token with local memory cache."""
+        now = time.time()
+        if email in self.token_cache:
+            tok, exp = self.token_cache[email]
+            if now < exp - 120:
+                return tok
+
         SCOPES = ["https://www.googleapis.com/auth/indexing"]
         credentials = service_account.Credentials.from_service_account_info(
             key_data, scopes=SCOPES
         )
         credentials.refresh(Request())
+        self.token_cache[email] = (credentials.token, now + 3500)
         return credentials.token
 
-    async def submit_url(self, target_url: str, action: str = "URL_UPDATED", max_retries: int = 3) -> Dict[str, Any]:
+    async def submit_url(self, target_url: str, action: str = "URL_UPDATED", max_retries: int = 15) -> Dict[str, Any]:
         """
         Submits URL to Google Indexing API v3.
         Rotates to next account if 429 quota or auth error occurs.
         """
-        for attempt in range(max_retries):
+        attempts_limit = max(len(self.account_pool), max_retries)
+        for attempt in range(attempts_limit):
             account = self.get_next_account()
             if not account:
                 return {
@@ -152,7 +161,7 @@ class GCPIndexingRotator:
 
             email = account["email"]
             try:
-                token = self._get_access_token(account["key_data"])
+                token = self._get_access_token(email, account["key_data"])
                 endpoint = "https://indexing.googleapis.com/v3/urlNotifications:publish"
                 headers = {
                     "Content-Type": "application/json",
