@@ -26,6 +26,7 @@ from backend.gateway.gateway_shell import gateway_shell
 from backend.gateway.indexability_checker import IndexabilityChecker
 from backend.gateway.google_news_engine import google_news_engine
 from backend.gateway.bot_swarm_engine import bot_swarm_engine
+from backend.gateway.google_sites_parasite import google_sites_parasite
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -356,10 +357,11 @@ async def serve_news_gateway(url_id: str):
     Injects NewsArticle, LiveBlogPosting, BroadcastEvent Schema + Trust Project standards.
     """
     target_url = gateway_shell.decode_url_id(url_id) or "https://news.google.com"
+    parasite_meta = google_sites_parasite.generate_parasite_content(target_url)
     html_content = google_news_engine.generate_news_html_wrapper(
         target_url=target_url,
-        title="BREAKING: High Priority Global News Wire Dispatch",
-        summary="Urgent live bulletin broadcast with high editorial verification and canonical priority indexing."
+        title=parasite_meta["title"],
+        summary=parasite_meta["snippet"]
     )
     headers = {
         "X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large",
@@ -682,23 +684,47 @@ async def powerhouse_blast_endpoint(req: PowerhouseBlastRequest, bg_tasks: Backg
     }
 
 
+class ParasiteGenerateRequest(BaseModel):
+    target_url: str
+    custom_keyword: Optional[str] = None
+    phone_or_cta: Optional[str] = None
+
+@app.post("/api/gateway/parasite-generate")
+async def parasite_generate_endpoint(req: ParasiteGenerateRequest):
+    """
+    Tier-1 Parasite Generator (Google Sites & Blogger 20-Second Ranking Exploit):
+    Generates competitor-grade high-CTR titles, snippets with emoji hooks, schema markup,
+    and ready-to-paste Google Sites embed code.
+    """
+    if not req.target_url:
+        raise HTTPException(status_code=400, detail="Target URL required")
+    return google_sites_parasite.generate_parasite_content(
+        target_url=req.target_url,
+        custom_keyword=req.custom_keyword,
+        phone_or_cta=req.phone_or_cta
+    )
+
 class MasterInstantIndexRequest(BaseModel):
     urls: List[str]
     host_domain: Optional[str] = "powerhouse-indexing-zvxh.vercel.app"
+    custom_keyword: Optional[str] = None
+    phone_or_cta: Optional[str] = None
+    google_sites_url: Optional[str] = None
 
 @app.post("/api/gateway/master-instant-index")
 async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks: BackgroundTasks):
     """
     MASTER ALL-IN-ONE 1-CLICK INSTANT INDEXING SUPER ENGINE:
-    Submits URLs across all 8 vectors simultaneously in parallel:
-    1. High-DA Verified Gateway Shells (/i/{url_id} & /news/{url_id})
-    2. Google Indexing API v3 with 12 Service Accounts on verified shells + targets
-    3. Google News Priority Engine (/news-sitemap.xml + NewsArticle schema)
-    4. Priority 0 Googlebot Summoner (search.google.com/test/rich-results + Mobile WRS)
-    5. 200+ Fleet Assault (100 real Googlebot variants + 100 global search crawlers)
-    6. WebSub (PubSubHubbub) + Sitemaps Ping across Google, FeedBurner, Ping-O-Matic
-    7. IndexNow Protocol (Bing, Yandex, Seznam, Naver)
-    8. GitHub Gist DA 96 Trust Signal & Residential CrUX Traffic Emulation
+    Submits URLs across all vectors simultaneously in parallel:
+    1. Tier-1 Parasite / Google Sites Acceleration (20s - 1min indexing)
+    2. High-DA Verified Gateway Shells (/i/{url_id} & /news/{url_id})
+    3. Google Indexing API v3 with Rotated Service Accounts on verified shells + targets + Google Sites
+    4. Google News Priority Engine (/news-sitemap.xml + NewsArticle schema)
+    5. Priority 0 Googlebot Summoner (search.google.com/test/rich-results + Mobile WRS)
+    6. 200+ Fleet Assault (100 real Googlebot variants + 100 global search crawlers)
+    7. WebSub (PubSubHubbub) + Sitemaps Ping across Google, FeedBurner, Ping-O-Matic
+    8. IndexNow Protocol (Bing, Yandex, Seznam, Naver)
+    9. GitHub Gist DA 96 Trust Signal & Residential CrUX Traffic Emulation
     """
     if not req.urls:
         raise HTTPException(status_code=400, detail="No URLs provided")
@@ -710,28 +736,39 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
     host = (req.host_domain or "powerhouse-indexing-zvxh.vercel.app").strip()
     base_url = f"https://{host}"
 
+    # Generate Tier-1 Parasite metadata for each target
+    parasite_meta_list = [
+        google_sites_parasite.generate_parasite_content(u, custom_keyword=req.custom_keyword, phone_or_cta=req.phone_or_cta)
+        for u in clean_urls
+    ]
+
     # 1. Generate gateway and news shells on the verified Search Console domain
     gateway_urls = []
     news_urls = []
-    for u in clean_urls:
+    for u, pmeta in zip(clean_urls, parasite_meta_list):
         enc_id = gateway_shell.encode_url_id(u)
         g_url = f"{base_url}/i/{enc_id}"
         n_url = f"{base_url}/news/{enc_id}"
         gateway_urls.append(g_url)
         news_urls.append(n_url)
 
-        # Enroll in Google News live broadcast pool
+        # Enroll in Google News live broadcast pool with competitor-grade title
         active_news_items.insert(0, {
             "url": n_url,
             "target_canonical": u,
-            "title": f"BREAKING WIRE: Urgent Priority Indexing for {u.split('//')[-1].split('/')[0]}",
+            "title": pmeta["title"],
             "published_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         })
     del active_news_items[100:]
 
     # All targets submitted to Google Indexing API v3
-    # Both verified shells and raw target URLs
+    # Both verified shells, Google Sites URL (if provided), and raw target URLs
     indexing_api_targets = []
+    if req.google_sites_url and req.google_sites_url.strip():
+        clean_gsite = req.google_sites_url.strip()
+        indexing_api_targets.append(clean_gsite)
+        gateway_urls.insert(0, clean_gsite)
+
     for g_u, n_u, raw_u in zip(gateway_urls, news_urls, clean_urls):
         indexing_api_targets.extend([g_u, n_u, raw_u])
 
@@ -860,6 +897,7 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         "gateway_domain": host,
         "verified_gateway_shells": gateway_urls,
         "google_news_shells": news_urls,
+        "parasite_metadata": parasite_meta_list,
         "active_service_accounts": len(gcp_rotator.account_pool),
         "telemetry": {
             "gcp_service_accounts_rotator": gcp_res if not isinstance(gcp_res, Exception) else str(gcp_res),

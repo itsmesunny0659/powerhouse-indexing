@@ -128,7 +128,7 @@ class BotSwarmEngine:
             "User-Agent": bot["ua"],
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": "gzip, deflate",
             "From": "googlebot(at)googlebot.com" if is_google else "bingbot(at)bing.com",
             "X-Forwarded-For": spoofed_ip,
             "Client-IP": spoofed_ip,
@@ -136,7 +136,7 @@ class BotSwarmEngine:
         }
 
         try:
-            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=6), allow_redirects=True) as resp:
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=6), allow_redirects=True, ssl=False) as resp:
                 # Read first 1KB to simulate real bot head parsing
                 await resp.content.read(1024)
                 return {
