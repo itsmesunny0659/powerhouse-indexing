@@ -27,6 +27,7 @@ from backend.gateway.indexability_checker import IndexabilityChecker
 from backend.gateway.google_news_engine import google_news_engine
 from backend.gateway.bot_swarm_engine import bot_swarm_engine
 from backend.gateway.google_sites_parasite import google_sites_parasite
+from backend.gateway.aggressive_parasite_machine import aggressive_machine
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -862,6 +863,17 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
                 return {"error": str(e)}
         return {}
 
+    # Vector 9: Aggressive Parasite & Top-Tier PBN Assault (Target-Direct Indexing)
+    async def run_aggressive_pbn_strike():
+        results = []
+        for u in clean_urls[:5]:
+            try:
+                res = await aggressive_machine.execute_target_strike(u, custom_keyword=req.custom_keyword)
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": u})
+        return results
+
     # Fire all vectors in parallel for instant execution!
     (
         gcp_res,
@@ -871,7 +883,8 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         ping_res,
         indexnow_res,
         traffic_res,
-        gist_res
+        gist_res,
+        pbn_res
     ) = await asyncio.gather(
         run_gcp_indexing(),
         run_googlebot_summoner(),
@@ -881,6 +894,7 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         run_indexnow(),
         run_traffic_emulation(),
         run_trust_gist(),
+        run_aggressive_pbn_strike(),
         return_exceptions=True
     )
 
@@ -906,6 +920,7 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         "parasite_metadata": parasite_meta_list,
         "active_service_accounts": len(gcp_rotator.account_pool),
         "telemetry": {
+            "top_tier_pbn_assault": pbn_res if not isinstance(pbn_res, Exception) else str(pbn_res),
             "gcp_service_accounts_rotator": gcp_res if not isinstance(gcp_res, Exception) else str(gcp_res),
             "googlebot_summoner": summoner_res if not isinstance(summoner_res, Exception) else str(summoner_res),
             "bot_swarm_fleet_assault": swarm_res if not isinstance(swarm_res, Exception) else str(swarm_res),
