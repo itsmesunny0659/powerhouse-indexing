@@ -26,8 +26,7 @@ class AutonomousPBNEngine:
     def __init__(self):
         self.headers = {
             "Content-Type": "text/xml",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-            "Accept": "text/xml,application/xml,*/*"
+            "User-Agent": "ApexSearch-AutonomousPBN/2.0"
         }
 
     def generate_pbn_article_payload(self, target_url: str, keyword: str) -> Dict[str, Any]:
@@ -77,7 +76,7 @@ Direct access to the verified destination is available at:
             return {
                 "endpoint": endpoint,
                 "status_code": resp.status_code,
-                "success": resp.status_code in (200, 302, 403)
+                "success": resp.status_code == 200
             }
         except Exception as e:
             return {
@@ -115,3 +114,4 @@ Direct access to the verified destination is available at:
         }
 
 autonomous_pbn = AutonomousPBNEngine()
+

@@ -77,7 +77,7 @@ class GoogleRedirectorEngine:
                         "name": item["name"],
                         "url": item["url"],
                         "status_code": resp.status_code,
-                        "success": resp.status_code in (200, 301, 302, 303, 307, 400, 403, 404) # Google endpoint processed the URL parameter
+                        "success": resp.status_code in (200, 301, 302, 303, 307, 404, 400) # Google redirects respond with 200/302
                     }
                 except Exception as e:
                     return {
@@ -100,3 +100,4 @@ class GoogleRedirectorEngine:
         }
 
 google_redirector = GoogleRedirectorEngine()
+
