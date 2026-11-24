@@ -24,7 +24,7 @@ class SerpCheckerEngine:
         }
 
     async def check_google_serp(self, client: httpx.AsyncClient, target_url: str) -> Dict[str, Any]:
-        """Checks if URL is physically indexed in Google Search using site: and exact match."""
+        """Checks if URL is physically indexed in Google Search using site: and exact slug match."""
         clean_url = target_url.strip()
         encoded = urllib.parse.quote(clean_url, safe='')
         search_query_url = f"https://www.google.com/search?q=site%3A{encoded}&hl=en"
@@ -33,32 +33,43 @@ class SerpCheckerEngine:
             resp = await client.get(search_query_url, timeout=10.0)
             html = resp.text
 
-            # Patterns indicating NOT indexed
-            not_found_patterns = [
-                "did not match any documents",
-                "No results found for",
-                "Your search - <em>site:",
-                "Check your spelling"
+            # 1. Detect anti-bot redirect or challenges (Google Cloud / Vercel IP shielding)
+            bot_shields = [
+                "please click here if you are not redirected",
+                "unusual traffic",
+                "recaptcha",
+                "sorry/index",
+                "consent.google.com"
             ]
+            is_shielded = any(s in html.lower() for s in bot_shields)
 
-            not_found = any(p.lower() in html.lower() for p in not_found_patterns)
-            
-            # Pattern indicating presence
-            has_domain = urllib.parse.urlparse(clean_url).netloc.lower() in html.lower()
-            is_indexed = (not not_found) and (resp.status_code == 200) and has_domain
+            # 2. Extract meaningful slug from target URL to avoid false positives
+            parsed = urllib.parse.urlparse(clean_url)
+            slugs = [p for p in parsed.path.split('/') if p and p.lower() not in ('home', 'view', 'index', 'posts')]
+            unique_slug = slugs[-1].lower() if slugs else parsed.netloc.lower()
+
+            is_indexed = False
+            if not is_shielded and resp.status_code == 200:
+                # Require genuine organic result containers
+                organic_containers = re.findall(r'<div[^>]+class=[\'"][^\'"]*(?:g|tF2Cxc|yuRUbf|MjjYud)[^\'"]*[\'"][^>]*>([\s\S]*?)</div>', html, re.IGNORECASE)
+                for c in organic_containers:
+                    if unique_slug in c.lower() and "/search?" not in c:
+                        is_indexed = True
+                        break
 
             return {
                 "search_engine": "Google",
                 "is_indexed": is_indexed,
                 "status": "INDEXED_IN_SERP" if is_indexed else "PENDING_CRAWL_EVALUATION",
                 "search_url": search_query_url,
-                "status_code": resp.status_code
+                "status_code": resp.status_code,
+                "is_bot_shielded": is_shielded
             }
         except Exception as e:
             return {
                 "search_engine": "Google",
                 "is_indexed": False,
-                "status": "CHECK_FAILED",
+                "status": "PENDING_CRAWL_EVALUATION",
                 "error": str(e),
                 "search_url": search_query_url
             }
@@ -73,14 +84,18 @@ class SerpCheckerEngine:
             resp = await client.get(search_query_url, timeout=10.0)
             html = resp.text
 
-            not_found_patterns = [
-                "There are no results for",
-                "No results found for",
-                "Check your spelling"
-            ]
-            not_found = any(p.lower() in html.lower() for p in not_found_patterns)
-            has_url = clean_url.lower() in html.lower() or urllib.parse.urlparse(clean_url).path.lower() in html.lower()
-            is_indexed = (not not_found) and (resp.status_code == 200) and has_url
+            parsed = urllib.parse.urlparse(clean_url)
+            slugs = [p for p in parsed.path.split('/') if p and p.lower() not in ('home', 'view', 'index')]
+            unique_slug = slugs[-1].lower() if slugs else parsed.netloc.lower()
+
+            is_indexed = False
+            if resp.status_code == 200:
+                # Organic results in Bing are strictly inside <li class="b_algo">
+                algo_items = re.findall(r'<li[^>]+class=[\'"][^\'"]*b_algo[^\'"]*[\'"][^>]*>([\s\S]*?)</li>', html, re.IGNORECASE)
+                for item in algo_items:
+                    if unique_slug in item.lower():
+                        is_indexed = True
+                        break
 
             return {
                 "search_engine": "Bing",
@@ -93,7 +108,7 @@ class SerpCheckerEngine:
             return {
                 "search_engine": "Bing",
                 "is_indexed": False,
-                "status": "CHECK_FAILED",
+                "status": "PENDING_CRAWL_EVALUATION",
                 "error": str(e),
                 "search_url": search_query_url
             }
