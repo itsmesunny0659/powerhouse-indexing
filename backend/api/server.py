@@ -994,35 +994,41 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
 
 
 class SerpCheckRequest(BaseModel):
-    url: str
+    url: Optional[str] = None
+    target_url: Optional[str] = None
 
 @app.post("/api/gateway/check-serp-status")
 async def check_serp_endpoint(req: SerpCheckRequest):
     """Real-Time Live SERP Radar: Checks whether URL is live in Google or Bing index."""
-    if not req.url:
+    target = req.url or req.target_url
+    if not target:
         raise HTTPException(status_code=400, detail="URL required")
-    return await serp_checker.verify_url_index_status(req.url)
+    return await serp_checker.verify_url_index_status(target)
 
 class RedirectBlastRequest(BaseModel):
-    url: str
+    url: Optional[str] = None
+    target_url: Optional[str] = None
 
 @app.post("/api/gateway/google-redirect-blast")
 async def google_redirect_endpoint(req: RedirectBlastRequest):
     """Google Official Redirector & AMP Cache Crawler Exploits."""
-    if not req.url:
+    target = req.url or req.target_url
+    if not target:
         raise HTTPException(status_code=400, detail="URL required")
-    return await google_redirector.blast_google_redirectors(req.url)
+    return await google_redirector.blast_google_redirectors(target)
 
 class NavboostRequest(BaseModel):
-    url: str
+    url: Optional[str] = None
+    target_url: Optional[str] = None
     keyword: Optional[str] = "Instant Priority Discovery"
 
 @app.post("/api/gateway/navboost-stream")
 async def navboost_endpoint(req: NavboostRequest):
     """Real Chromium NavBoost & Residential Search Clickstream."""
-    if not req.url:
+    target = req.url or req.target_url
+    if not target:
         raise HTTPException(status_code=400, detail="URL required")
-    return await navboost_engine.execute_navboost_stream(req.url, req.keyword)
+    return await navboost_engine.execute_navboost_stream(target, req.keyword or "Instant Priority Discovery")
 
 
 @app.get("/api/export/csv")
