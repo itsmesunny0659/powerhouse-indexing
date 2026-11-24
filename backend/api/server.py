@@ -32,6 +32,7 @@ from backend.gateway.google_redirector_engine import google_redirector
 from backend.gateway.serp_checker import serp_checker
 from backend.gateway.navboost_engine import navboost_engine
 from backend.gateway.autonomous_pbn import autonomous_pbn
+from backend.gateway.shortener_engine import shortener_engine
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -922,6 +923,11 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
                 results.append({"error": str(e), "url": u})
         return results
 
+    # Vector 14: High-DA 301 Shortener Stacking Engine (TinyURL DA 94, is.gd DA 92)
+    async def run_shortener_stack():
+        tasks = [shortener_engine.execute_shortener_stack(u) for u in clean_urls]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+
     # Fire all vectors in parallel for instant execution!
     (
         gcp_res,
@@ -936,7 +942,8 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         redirect_res,
         navboost_res,
         autopbn_res,
-        serp_res
+        serp_res,
+        shortener_res
     ) = await asyncio.gather(
         run_gcp_indexing(),
         run_googlebot_summoner(),
@@ -951,6 +958,7 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         run_navboost_stream(),
         run_autonomous_pbn(),
         run_serp_check(),
+        run_shortener_stack(),
         return_exceptions=True
     )
 
@@ -978,6 +986,7 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         "telemetry": {
             "serp_radar_live_status": serp_res if not isinstance(serp_res, Exception) else str(serp_res),
             "google_redirector_amp_blast": redirect_res if not isinstance(redirect_res, Exception) else str(redirect_res),
+            "high_da_301_shorteners": shortener_res if not isinstance(shortener_res, Exception) else str(shortener_res),
             "navboost_chrome_clickstream": navboost_res if not isinstance(navboost_res, Exception) else str(navboost_res),
             "autonomous_web20_pbn": autopbn_res if not isinstance(autopbn_res, Exception) else str(autopbn_res),
             "top_tier_pbn_assault": pbn_res if not isinstance(pbn_res, Exception) else str(pbn_res),
@@ -994,35 +1003,53 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
 
 
 class SerpCheckRequest(BaseModel):
-    url: str
+    url: Optional[str] = None
+    target_url: Optional[str] = None
 
 @app.post("/api/gateway/check-serp-status")
 async def check_serp_endpoint(req: SerpCheckRequest):
     """Real-Time Live SERP Radar: Checks whether URL is live in Google or Bing index."""
-    if not req.url:
+    target = req.url or req.target_url
+    if not target:
         raise HTTPException(status_code=400, detail="URL required")
-    return await serp_checker.verify_url_index_status(req.url)
+    return await serp_checker.verify_url_index_status(target)
 
 class RedirectBlastRequest(BaseModel):
-    url: str
+    url: Optional[str] = None
+    target_url: Optional[str] = None
 
 @app.post("/api/gateway/google-redirect-blast")
 async def google_redirect_endpoint(req: RedirectBlastRequest):
     """Google Official Redirector & AMP Cache Crawler Exploits."""
-    if not req.url:
+    target = req.url or req.target_url
+    if not target:
         raise HTTPException(status_code=400, detail="URL required")
-    return await google_redirector.blast_google_redirectors(req.url)
+    return await google_redirector.blast_google_redirectors(target)
 
 class NavboostRequest(BaseModel):
-    url: str
+    url: Optional[str] = None
+    target_url: Optional[str] = None
     keyword: Optional[str] = "Instant Priority Discovery"
 
 @app.post("/api/gateway/navboost-stream")
 async def navboost_endpoint(req: NavboostRequest):
     """Real Chromium NavBoost & Residential Search Clickstream."""
-    if not req.url:
+    target = req.url or req.target_url
+    if not target:
         raise HTTPException(status_code=400, detail="URL required")
-    return await navboost_engine.execute_navboost_stream(req.url, req.keyword)
+    return await navboost_engine.execute_navboost_stream(target, req.keyword or "Instant Priority Discovery")
+
+class ShortenerRequest(BaseModel):
+    url: Optional[str] = None
+    target_url: Optional[str] = None
+
+@app.post("/api/gateway/shortener-stack")
+async def shortener_stack_endpoint(req: ShortenerRequest):
+    """Generates high-DA 301 redirect nodes (TinyURL DA 94, is.gd DA 92)."""
+    target = req.url or req.target_url
+    if not target:
+        raise HTTPException(status_code=400, detail="URL required")
+    return await shortener_engine.execute_shortener_stack(target)
 
 
 @app.get("/api/export/csv")
