@@ -28,6 +28,10 @@ from backend.gateway.google_news_engine import google_news_engine
 from backend.gateway.bot_swarm_engine import bot_swarm_engine
 from backend.gateway.google_sites_parasite import google_sites_parasite
 from backend.gateway.aggressive_parasite_machine import aggressive_machine
+from backend.gateway.google_redirector_engine import google_redirector
+from backend.gateway.serp_checker import serp_checker
+from backend.gateway.navboost_engine import navboost_engine
+from backend.gateway.autonomous_pbn import autonomous_pbn
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -874,6 +878,50 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
                 results.append({"error": str(e), "url": u})
         return results
 
+    # Vector 10: Google Official Redirector & AMP Project Cache Blast
+    async def run_google_redirectors():
+        results = []
+        for u in clean_urls[:5]:
+            try:
+                res = await google_redirector.blast_google_redirectors(u)
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": u})
+        return results
+
+    # Vector 11: Real Chromium NavBoost & Residential Search Clickstream
+    async def run_navboost_stream():
+        results = []
+        for u in clean_urls[:5]:
+            try:
+                res = await navboost_engine.execute_navboost_stream(u, keyword=req.custom_keyword or "Verified Official Resource")
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": u})
+        return results
+
+    # Vector 12: Autonomous Web 2.0 & Blogspot PBN Cloud Syndication
+    async def run_autonomous_pbn():
+        results = []
+        for u in clean_urls[:5]:
+            try:
+                res = await autonomous_pbn.execute_pbn_syndication(u, keyword=req.custom_keyword)
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": u})
+        return results
+
+    # Vector 13: Real-Time Live SERP Verification Radar
+    async def run_serp_check():
+        results = []
+        for u in clean_urls[:3]:
+            try:
+                res = await serp_checker.verify_url_index_status(u)
+                results.append(res)
+            except Exception as e:
+                results.append({"error": str(e), "url": u})
+        return results
+
     # Fire all vectors in parallel for instant execution!
     (
         gcp_res,
@@ -884,7 +932,11 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         indexnow_res,
         traffic_res,
         gist_res,
-        pbn_res
+        pbn_res,
+        redirect_res,
+        navboost_res,
+        autopbn_res,
+        serp_res
     ) = await asyncio.gather(
         run_gcp_indexing(),
         run_googlebot_summoner(),
@@ -895,6 +947,10 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         run_traffic_emulation(),
         run_trust_gist(),
         run_aggressive_pbn_strike(),
+        run_google_redirectors(),
+        run_navboost_stream(),
+        run_autonomous_pbn(),
+        run_serp_check(),
         return_exceptions=True
     )
 
@@ -920,6 +976,10 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         "parasite_metadata": parasite_meta_list,
         "active_service_accounts": len(gcp_rotator.account_pool),
         "telemetry": {
+            "serp_radar_live_status": serp_res if not isinstance(serp_res, Exception) else str(serp_res),
+            "google_redirector_amp_blast": redirect_res if not isinstance(redirect_res, Exception) else str(redirect_res),
+            "navboost_chrome_clickstream": navboost_res if not isinstance(navboost_res, Exception) else str(navboost_res),
+            "autonomous_web20_pbn": autopbn_res if not isinstance(autopbn_res, Exception) else str(autopbn_res),
             "top_tier_pbn_assault": pbn_res if not isinstance(pbn_res, Exception) else str(pbn_res),
             "gcp_service_accounts_rotator": gcp_res if not isinstance(gcp_res, Exception) else str(gcp_res),
             "googlebot_summoner": summoner_res if not isinstance(summoner_res, Exception) else str(summoner_res),
@@ -931,6 +991,38 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
             "github_gist_da96": gist_res if not isinstance(gist_res, Exception) else str(gist_res)
         }
     }
+
+
+class SerpCheckRequest(BaseModel):
+    url: str
+
+@app.post("/api/gateway/check-serp-status")
+async def check_serp_endpoint(req: SerpCheckRequest):
+    """Real-Time Live SERP Radar: Checks whether URL is live in Google or Bing index."""
+    if not req.url:
+        raise HTTPException(status_code=400, detail="URL required")
+    return await serp_checker.verify_url_index_status(req.url)
+
+class RedirectBlastRequest(BaseModel):
+    url: str
+
+@app.post("/api/gateway/google-redirect-blast")
+async def google_redirect_endpoint(req: RedirectBlastRequest):
+    """Google Official Redirector & AMP Cache Crawler Exploits."""
+    if not req.url:
+        raise HTTPException(status_code=400, detail="URL required")
+    return await google_redirector.blast_google_redirectors(req.url)
+
+class NavboostRequest(BaseModel):
+    url: str
+    keyword: Optional[str] = "Instant Priority Discovery"
+
+@app.post("/api/gateway/navboost-stream")
+async def navboost_endpoint(req: NavboostRequest):
+    """Real Chromium NavBoost & Residential Search Clickstream."""
+    if not req.url:
+        raise HTTPException(status_code=400, detail="URL required")
+    return await navboost_engine.execute_navboost_stream(req.url, req.keyword)
 
 
 @app.get("/api/export/csv")
