@@ -33,7 +33,7 @@ from backend.gateway.serp_checker import serp_checker
 from backend.gateway.navboost_engine import navboost_engine
 from backend.gateway.autonomous_pbn import autonomous_pbn
 from backend.gateway.shortener_engine import shortener_engine
-from fastapi.responses import Response, PlainTextResponse, HTMLResponse
+from fastapi.responses import Response, PlainTextResponse, HTMLResponse, RedirectResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
 
@@ -360,21 +360,28 @@ async def get_news_sitemap():
 async def serve_news_gateway(url_id: str):
     """
     Google News Priority Gateway Shell:
-    Injects NewsArticle, LiveBlogPosting, BroadcastEvent Schema + Trust Project standards.
+    Injects clean NewsArticle Schema + Trust Project standards without doorway spam headers.
     """
     target_url = gateway_shell.decode_url_id(url_id) or "https://news.google.com"
-    parasite_meta = google_sites_parasite.generate_parasite_content(target_url)
+    keyword = gateway_shell.extract_keywords(target_url).title()
     html_content = google_news_engine.generate_news_html_wrapper(
         target_url=target_url,
-        title=parasite_meta["title"],
-        summary=parasite_meta["snippet"]
+        title=f"{keyword} — Live Reference & Editorial Update",
+        summary=f"Verified reference guide and editorial coverage for {keyword}."
     )
     headers = {
         "X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large",
-        "Link": f'<{target_url}>; rel="canonical"',
         "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
     }
     return HTMLResponse(content=html_content, headers=headers)
+
+@app.get("/go/{url_id}")
+async def redirect_gateway_301(url_id: str):
+    """Clean HTTP 301 permanent redirect relay on Search-Console-verified domain."""
+    target_url = gateway_shell.decode_url_id(url_id)
+    if not target_url:
+        raise HTTPException(status_code=404, detail="Invalid Gateway ID")
+    return RedirectResponse(url=target_url, status_code=301)
 
 class GoogleNewsPriorityRequest(BaseModel):
     urls: List[str]
@@ -507,7 +514,6 @@ async def serve_gateway_page(url_id: str):
     html_content = gateway_shell.generate_html_shell(target_url)
     headers = {
         "X-Robots-Tag": "index, follow, max-snippet:-1, max-image-preview:large",
-        "Link": f'<{target_url}>; rel="canonical"',
         "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
     }
     return HTMLResponse(content=html_content, headers=headers)
