@@ -117,19 +117,23 @@ class GCPIndexingRotator:
         return False
 
     def get_next_account(self) -> Optional[Dict[str, Any]]:
-        """Returns the next non-cooldown account in round-robin sequence."""
+        """Returns the next non-cooldown account, keeping working verified accounts prioritized."""
         if not self.account_pool:
             return None
 
-        attempts = 0
-        total = len(self.account_pool)
-        while attempts < total:
-            acc = self.account_pool[self.current_idx % total]
-            self.current_idx = (self.current_idx + 1) % total
-            if not self._is_cooling_down(acc["email"]):
+        # Filter available non-cooldown accounts
+        available = [acc for acc in self.account_pool if not self._is_cooling_down(acc["email"])]
+        if not available:
+            return None
+
+        # Prefer verified Search Console owner accounts first
+        for acc in available:
+            if "instantreelsdownload" in acc.get("email", ""):
                 return acc
-            attempts += 1
-        return None
+
+        acc = available[self.current_idx % len(available)]
+        self.current_idx = (self.current_idx + 1) % len(available)
+        return acc
 
     def _get_access_token(self, email: str, key_data: Dict[str, Any]) -> str:
         """Generates Google OAuth2 Bearer token with local memory cache."""
