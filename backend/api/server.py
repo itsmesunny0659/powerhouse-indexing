@@ -33,6 +33,7 @@ from backend.gateway.serp_checker import serp_checker
 from backend.gateway.navboost_engine import navboost_engine
 from backend.gateway.autonomous_pbn import autonomous_pbn
 from backend.gateway.shortener_engine import shortener_engine
+from backend.gateway.blogger_syndicator import blogger_syndicator
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse, RedirectResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -550,6 +551,24 @@ async def trust_syndicate_endpoint(req: TrustSyndicateRequest):
     res = await trust_engine.syndicate_url(req.url)
     return res
 
+class BloggerSyndicateRequest(BaseModel):
+    urls: List[str]
+    keyword: Optional[str] = None
+    blog_id: Optional[str] = None
+    oauth_token: Optional[str] = None
+
+@app.post("/api/gateway/blogger-syndicate")
+async def blogger_syndicate_endpoint(req: BloggerSyndicateRequest):
+    """Publishes clean static HTML directory post to Blogger (*.blogspot.com) + pings Google WebSub."""
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+    return await blogger_syndicator.syndicate_urls(
+        urls=req.urls,
+        keyword=req.keyword,
+        blog_id=req.blog_id,
+        oauth_token=req.oauth_token,
+    )
+
 class TrafficEmulationRequest(BaseModel):
     url: str
 
@@ -782,7 +801,8 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         gateway_urls.insert(0, clean_gsite)
 
     for g_u, n_u, raw_u in zip(gateway_urls, news_urls, clean_urls):
-        indexing_api_targets.extend([g_u, n_u, raw_u])
+        go_u = f"{base_url}/go/{gateway_shell.encode_url_id(raw_u)}"
+        indexing_api_targets.extend([go_u, g_u, n_u, raw_u])
 
     summoner = GooglebotSummoner()
 
@@ -929,10 +949,17 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
                 results.append({"error": str(e), "url": u})
         return results
 
-    # Vector 14: High-DA 301 Shortener Stacking Engine (TinyURL DA 94, is.gd DA 92)
+    # Vector 14: High-DA 301 Shortener Stacking Engine (TinyURL DA 94, is.gd DA 92, v.gd, clck.ru)
     async def run_shortener_stack():
         tasks = [shortener_engine.execute_shortener_stack(u) for u in clean_urls]
         return await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Vector 15: Blogger (*.blogspot.com) Native Static HTML + WebSub Syndication
+    async def run_blogger_syndication():
+        try:
+            return await blogger_syndicator.syndicate_urls(clean_urls, keyword=req.custom_keyword)
+        except Exception as e:
+            return {"error": str(e)}
 
     # Fire all vectors in parallel for instant execution!
     (
@@ -949,7 +976,8 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         navboost_res,
         autopbn_res,
         serp_res,
-        shortener_res
+        shortener_res,
+        blogger_res
     ) = await asyncio.gather(
         run_gcp_indexing(),
         run_googlebot_summoner(),
@@ -965,6 +993,7 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         run_autonomous_pbn(),
         run_serp_check(),
         run_shortener_stack(),
+        run_blogger_syndication(),
         return_exceptions=True
     )
 
@@ -993,6 +1022,7 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
             "serp_radar_live_status": serp_res if not isinstance(serp_res, Exception) else str(serp_res),
             "google_redirector_amp_blast": redirect_res if not isinstance(redirect_res, Exception) else str(redirect_res),
             "high_da_301_shorteners": shortener_res if not isinstance(shortener_res, Exception) else str(shortener_res),
+            "blogger_syndication": blogger_res if not isinstance(blogger_res, Exception) else str(blogger_res),
             "navboost_chrome_clickstream": navboost_res if not isinstance(navboost_res, Exception) else str(navboost_res),
             "autonomous_web20_pbn": autopbn_res if not isinstance(autopbn_res, Exception) else str(autopbn_res),
             "top_tier_pbn_assault": pbn_res if not isinstance(pbn_res, Exception) else str(pbn_res),
