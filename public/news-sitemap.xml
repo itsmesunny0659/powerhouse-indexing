@@ -1,40 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   <url>
-    <loc>https://powerhouse-indexing-zvxh.vercel.app/news/u_aHR0cHM6Ly9zaXRlcy5nb29nbGUuY29tL3ZpZXcva3lhZmF5ZGFoYWliaGFpa3lheWFycmluZGV4eC9ob21l</loc>
-    <news:news>
-      <news:publication>
-        <news:name>Apex Global Breaking News</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-11-24T18:28:40Z</news:publication_date>
-      <news:title>GUIA Official ⛵ 🐳 kyafaydahaibhaikyayarrindexx 🔋 🧲 !</news:title>
-    </news:news>
-    <changefreq>always</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
     <loc>https://powerhouse-indexing-zvxh.vercel.app/</loc>
     <news:news>
       <news:publication>
-        <news:name>Apex Global Breaking News</news:name>
+        <news:name>ApexSearch Fast Indexing Engine</news:name>
         <news:language>en</news:language>
       </news:publication>
-      <news:publication_date>2026-11-24T18:28:40Z</news:publication_date>
-      <news:title>ApexSearch Real-Time Fast Indexing Live Wire Dispatch</news:title>
-    </news:news>
-    <changefreq>always</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://powerhouse-indexing-zvxh.vercel.app/news/u_aHR0cHM6Ly9zaXRlcy5nb29nbGUuY29tL3ZpZXcvaG93LXRvLWVhcm4tbW9uZXktZWFzeS13YXlzcy9ob21l</loc>
-    <news:news>
-      <news:publication>
-        <news:name>Powerhouse Global Wire</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-11-25T11:50:00+00:00</news:publication_date>
-      <news:title>How To Earn Money Easy Ways - Comprehensive Guide and Strategies</news:title>
+      <news:publication_date>2026-11-25T21:10:00+00:00</news:publication_date>
+      <news:title>ApexSearch — High-Tech Web Crawler &amp; Indexing Engine</news:title>
     </news:news>
   </url>
 </urlset>
