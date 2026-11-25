@@ -1,12 +1,34 @@
 import asyncio
+import base64
+import os
 import time
 import urllib.parse
+import zlib
 import httpx
 from typing import List, Dict, Any, Optional
 
 GOOGLE_RICH_RESULTS_URL = "https://search.google.com/test/rich-results"
 GOOGLE_PAGESPEED_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 GOOGLE_WEBSUB_HUB = "https://pubsubhubbub.appspot.com/publish"
+
+def _load_default_psi_key() -> Optional[str]:
+    env_key = os.environ.get("GOOGLE_PAGESPEED_API_KEY")
+    if env_key:
+        return env_key.strip()
+    candidates = [
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "psi_key.dat"),
+        "data/psi_key.dat",
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    raw = f.read().strip()
+                if raw:
+                    return zlib.decompress(base64.b64decode(raw.encode("ascii"))).decode("utf-8").strip()
+            except Exception:
+                pass
+    return None
 
 class GooglebotSummoner:
     """
@@ -20,7 +42,7 @@ class GooglebotSummoner:
     """
 
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key
+        self.api_key = api_key or _load_default_psi_key()
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
