@@ -86,19 +86,42 @@ Direct access to the verified destination is available at:
                 "success": False
             }
 
+    async def publish_web20_nodes(self, client: httpx.AsyncClient, target_url: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Publishes real public Web 2.0 / Paste backlink nodes indexed by search engines."""
+        nodes = []
+        body_text = payload["markdown_content"]
+        try:
+            r = await client.post("https://paste.rs/", content=body_text.encode("utf-8"), headers={"Content-Type": "text/plain"}, timeout=8.0)
+            if r.status_code in (200, 201) and r.text.strip().startswith("http"):
+                nodes.append({"platform": "paste.rs", "url": r.text.strip(), "success": True})
+        except Exception as e:
+            nodes.append({"platform": "paste.rs", "success": False, "error": str(e)})
+
+        try:
+            r = await client.post("https://dpaste.com/api/v2/", data={"content": body_text, "expiry_days": 365}, headers={"User-Agent": "ApexSearch-PBN/2.0"}, timeout=8.0)
+            if r.status_code in (200, 201) and r.text.strip().startswith("http"):
+                nodes.append({"platform": "dpaste.com", "url": r.text.strip(), "success": True})
+        except Exception as e:
+            nodes.append({"platform": "dpaste.com", "success": False, "error": str(e)})
+        return nodes
+
     async def execute_pbn_syndication(self, target_url: str, keyword: Optional[str] = None) -> Dict[str, Any]:
         """
         Executes full autonomous PBN burst:
         1. Generates rich PBN article payload with do-follow anchor.
-        2. Blasts XML-RPC pings across high-DA blog directories.
+        2. Publishes live Web 2.0 backlink nodes (paste.rs, dpaste.com).
+        3. Blasts XML-RPC pings across high-DA blog directories.
         """
         t0 = time.perf_counter()
         clean_kw = keyword or re.sub(r"https?://[^/]+", "", target_url).strip("/").replace("-", " ") or "Priority Resource"
         payload = self.generate_pbn_article_payload(target_url, clean_kw)
 
         async with httpx.AsyncClient(headers=self.headers, verify=False, timeout=8.0) as client:
-            tasks = [self.broadcast_pbn_ping(client, ep, target_url, payload["title"]) for ep in PBN_PING_ENDPOINTS]
-            ping_results = await asyncio.gather(*tasks, return_exceptions=True)
+            ping_tasks = [self.broadcast_pbn_ping(client, ep, target_url, payload["title"]) for ep in PBN_PING_ENDPOINTS]
+            ping_results, web20_nodes = await asyncio.gather(
+                asyncio.gather(*ping_tasks, return_exceptions=True),
+                self.publish_web20_nodes(client, target_url, payload)
+            )
 
         elapsed = round(time.perf_counter() - t0, 2)
         successful = sum(1 for r in ping_results if isinstance(r, dict) and r.get("success"))
@@ -108,6 +131,7 @@ Direct access to the verified destination is available at:
             "status": "AUTONOMOUS_PBN_COMPLETED",
             "elapsed_sec": elapsed,
             "article_payload": payload,
+            "live_web20_nodes": web20_nodes,
             "successful_pbn_pings": successful,
             "total_pbn_endpoints": len(PBN_PING_ENDPOINTS),
             "pbn_ping_details": [r if isinstance(r, dict) else {"error": str(r)} for r in ping_results]

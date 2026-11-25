@@ -46,12 +46,34 @@ class ShortenerStackingEngine:
         except Exception as e:
             return {"service": "TinyURL (DA 94)", "success": False, "error": str(e)}
 
+    async def generate_vgd_shortener(self, client: httpx.AsyncClient, target_url: str) -> Dict[str, Any]:
+        """Creates permanent 301 redirect on v.gd (DA 85+)."""
+        try:
+            resp = await client.get("https://v.gd/create.php", params={"format": "simple", "url": target_url}, timeout=8.0)
+            if resp.status_code == 200 and resp.text.strip().startswith("http"):
+                return {"service": "v.gd (DA 85+)", "short_url": resp.text.strip(), "success": True, "status_code": 200}
+            return {"service": "v.gd (DA 85+)", "success": False, "status_code": resp.status_code}
+        except Exception as e:
+            return {"service": "v.gd (DA 85+)", "success": False, "error": str(e)}
+
+    async def generate_clckru_shortener(self, client: httpx.AsyncClient, target_url: str) -> Dict[str, Any]:
+        """Creates permanent 301 redirect on Yandex clck.ru (DA 98)."""
+        try:
+            resp = await client.get("https://clck.ru/--", params={"url": target_url}, timeout=8.0)
+            if resp.status_code == 200 and resp.text.strip().startswith("http"):
+                return {"service": "Yandex clck.ru (DA 98)", "short_url": resp.text.strip(), "success": True, "status_code": 200}
+            return {"service": "Yandex clck.ru (DA 98)", "success": False, "status_code": resp.status_code}
+        except Exception as e:
+            return {"service": "Yandex clck.ru (DA 98)", "success": False, "error": str(e)}
+
     async def execute_shortener_stack(self, target_url: str) -> Dict[str, Any]:
         """Generates all high-DA shortener 301 redirect nodes in parallel."""
         async with httpx.AsyncClient(headers=self.headers, verify=False, timeout=10.0) as client:
             t1 = self.generate_is_gd_shortener(client, target_url)
             t2 = self.generate_tinyurl_shortener(client, target_url)
-            results = await asyncio.gather(t1, t2, return_exceptions=True)
+            t3 = self.generate_vgd_shortener(client, target_url)
+            t4 = self.generate_clckru_shortener(client, target_url)
+            results = await asyncio.gather(t1, t2, t3, t4, return_exceptions=True)
 
         shorteners = [r for r in results if isinstance(r, dict) and r.get("success")]
         return {
