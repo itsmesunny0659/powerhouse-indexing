@@ -64,11 +64,12 @@ class GatewayShellEngine:
 
     def generate_html_shell(self, target_url: str, title: Optional[str] = None, description: Optional[str] = None) -> str:
         """
-        Creates competitor-grade high-CTR Schema.org JobPosting exploit wrapper with canonical link.
+        Creates a clean, high-trust editorial directory wrapper with WebPage schema and dofollow citations.
+        Avoids meta-refresh or doorway spam signals so Googlebot indexes and follows outbound links cleanly.
         """
         keyword = self.extract_keywords(target_url)
-        page_title = title or f"GUIA Official ⛵ 🐳 {keyword} 🔋 🧲 !"
-        page_desc = description or f"20 seconds ago — Portal oficial e acesso verificado de {keyword} é ☎️ | ◢▼ Acesso Oficial Online ◢▼. Acesso prioritário com suporte imediato e downloads diretos."
+        page_title = title or f"{keyword.title()} — Verified Official Directory & Guide"
+        page_desc = description or f"Verified editorial resource and direct reference guide for {keyword}. Explore official documentation, insights, and direct access."
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -77,33 +78,20 @@ class GatewayShellEngine:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{page_title}</title>
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <link rel="canonical" href="{target_url}">
-    <meta http-equiv="refresh" content="2;url={target_url}">
     <meta name="description" content="{page_desc}">
 
-    <!-- SCHEMA.ORG JOBPOSTING / PRIORITY CRAWL INJECTION -->
     <script type="application/ld+json">
     {{
       "@context": "https://schema.org",
-      "@type": "JobPosting",
-      "title": "{page_title}",
+      "@type": "WebPage",
+      "name": "{page_title}",
       "description": "{page_desc}",
-      "datePosted": "2026-11-23T00:00:00Z",
-      "validThrough": "2027-11-23T00:00:00Z",
-      "employmentType": "FULL_TIME",
-      "hiringOrganization": {{
-        "@type": "Organization",
-        "name": "Apex Fast Indexing Authority Network",
-        "sameAs": "https://www.google.com"
+      "mainEntity": {{
+        "@type": "WebSite",
+        "name": "{keyword.title()}",
+        "url": "{target_url}"
       }},
-      "jobLocation": {{
-        "@type": "Place",
-        "address": {{
-          "@type": "PostalAddress",
-          "addressLocality": "Global",
-          "addressCountry": "US"
-        }}
-      }}
+      "relatedLink": ["{target_url}"]
     }}
     </script>
     <style>
