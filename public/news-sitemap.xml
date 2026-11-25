@@ -26,4 +26,15 @@
     <changefreq>always</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://powerhouse-indexing-zvxh.vercel.app/news/u_aHR0cHM6Ly9zaXRlcy5nb29nbGUuY29tL3ZpZXcvaG93LXRvLWVhcm4tbW9uZXktZWFzeS13YXlzcy9ob21l</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Powerhouse Global Wire</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-11-25T11:50:00+00:00</news:publication_date>
+      <news:title>How To Earn Money Easy Ways - Comprehensive Guide and Strategies</news:title>
+    </news:news>
+  </url>
 </urlset>
