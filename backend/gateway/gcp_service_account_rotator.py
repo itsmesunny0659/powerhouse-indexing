@@ -103,6 +103,9 @@ class GCPIndexingRotator:
             except Exception as e:
                 logger.error(f"[GCP Rotator] Failed to decompress vault keys: {e}")
 
+        # Prioritize verified working Search Console owner accounts (e.g. instantreelsdownload)
+        self.account_pool.sort(key=lambda a: 0 if "instantreelsdownload" in a.get("email", "") else 1)
+
         logger.info(f"[GCP Rotator] Loaded {len(self.account_pool)} service accounts.")
 
     def _is_cooling_down(self, email: str) -> bool:
