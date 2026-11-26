@@ -34,6 +34,7 @@ from backend.gateway.navboost_engine import navboost_engine
 from backend.gateway.autonomous_pbn import autonomous_pbn
 from backend.gateway.shortener_engine import shortener_engine
 from backend.gateway.blogger_syndicator import blogger_syndicator
+from backend.gateway.news_autopilot import news_autopilot
 from fastapi.responses import Response, PlainTextResponse, HTMLResponse, RedirectResponse
 
 app = FastAPI(title="ApexSearch - Google-Grade Indexing & Ranking Engine", version="1.0.0")
@@ -630,6 +631,11 @@ async def blogger_syndicate_endpoint(req: BloggerSyndicateRequest):
         blog_id=req.blog_id,
         oauth_token=req.oauth_token,
     )
+
+@app.api_route("/api/cron/news-autopilot", methods=["GET", "POST"])
+async def news_autopilot_cron_endpoint(max_posts: int = Query(1, ge=1, le=5)):
+    """24/7 Cloud News-to-Blogger Autopilot (AajTak, ABP, Google News RSS -> Rephrase -> Image Modify -> Blogger -> WebSub -> GCP Indexing API)."""
+    return await news_autopilot.run_cycle(max_posts=max_posts)
 
 class TrafficEmulationRequest(BaseModel):
     url: str
