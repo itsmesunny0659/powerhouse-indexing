@@ -23,8 +23,11 @@ logger = logging.getLogger(__name__)
 
 RSS_FEEDS = [
     ("AajTak", "https://www.aajtak.in/rssfeeds/?id=home"),
+    ("NBC News", "https://feeds.nbcnews.com/nbcnews/public/news"),
     ("ABP News", "https://news.abplive.com/news/india/feed"),
+    ("US News", "https://news.google.com/rss/search?q=site:usnews.com&hl=en-US&gl=US&ceid=US:en"),
     ("ABP Hindi", "https://www.abplive.com/home/feed"),
+    ("NBC World", "https://feeds.nbcnews.com/nbcnews/public/world"),
     ("Google News India", "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en"),
     ("Google News Hindi", "https://news.google.com/rss?hl=hi&gl=IN&ceid=IN:hi"),
 ]
@@ -55,30 +58,70 @@ class NewsAutopilotEngine:
             logger.warning(f"[NewsAutopilot] Failed to read existing Blogger feed: {e}")
         return []
 
+    async def _fetch_single_feed(self, client: httpx.AsyncClient, source_name: str, feed_url: str) -> List[Dict[str, str]]:
+        out: List[Dict[str, str]] = []
+        try:
+            r = await client.get(feed_url, timeout=8.0)
+            if r.status_code != 200:
+                return out
+            root = ET.fromstring(r.content)
+            for item in root.findall(".//item")[:5]:
+                title = (item.findtext("title") or "").strip()
+                link = (item.findtext("link") or "").strip()
+                desc = (item.findtext("description") or "").strip()
+                pub_date = (item.findtext("pubDate") or "").strip()
+                if title and link:
+                    out.append({
+                        "source": source_name,
+                        "title": title,
+                        "link": link,
+                        "description": BeautifulSoup(desc, "html.parser").get_text(" ", strip=True),
+                        "pubDate": pub_date,
+                    })
+        except Exception as e:
+            logger.warning(f"[NewsAutopilot] RSS error ({source_name}): {e}")
+        return out
+
     async def _fetch_rss_items(self, client: httpx.AsyncClient) -> List[Dict[str, str]]:
-        items: List[Dict[str, str]] = []
-        for source_name, feed_url in RSS_FEEDS:
-            try:
-                r = await client.get(feed_url, timeout=10.0)
-                if r.status_code != 200:
-                    continue
-                root = ET.fromstring(r.content)
-                for item in root.findall(".//item")[:5]:
-                    title = (item.findtext("title") or "").strip()
-                    link = (item.findtext("link") or "").strip()
-                    desc = (item.findtext("description") or "").strip()
-                    pub_date = (item.findtext("pubDate") or "").strip()
-                    if title and link:
-                        items.append({
-                            "source": source_name,
-                            "title": title,
-                            "link": link,
-                            "description": BeautifulSoup(desc, "html.parser").get_text(" ", strip=True),
-                            "pubDate": pub_date,
-                        })
-            except Exception as e:
-                logger.warning(f"[NewsAutopilot] RSS error ({source_name}): {e}")
-        return items
+        feed_lists = await asyncio.gather(
+            *[self._fetch_single_feed(client, src, url) for src, url in RSS_FEEDS],
+            return_exceptions=True
+        )
+        # Round-robin interleave across sources so all channels get published evenly
+        clean_lists = [fl for fl in feed_lists if isinstance(fl, list)]
+        interleaved: List[Dict[str, str]] = []
+        max_len = max((len(fl) for fl in clean_lists), default=0)
+        for i in range(max_len):
+            for fl in clean_lists:
+                if i < len(fl):
+                    interleaved.append(fl[i])
+        return interleaved
+
+    async def _ping_gsc_sitemap(self, site_url: str) -> Optional[int]:
+        """Submits updated sitemap.xml via Google Search Console API using myindexingtool004."""
+        try:
+            import urllib.parse
+            from google.oauth2 import service_account
+            from google.auth.transport.requests import Request
+            from backend.gateway.gcp_service_account_rotator import gcp_rotator
+
+            acc = next((a for a in gcp_rotator.account_pool if "myindexingtool004" in a.get("email", "")), None)
+            if not acc:
+                return None
+            creds = service_account.Credentials.from_service_account_info(
+                acc["key_data"], scopes=["https://www.googleapis.com/auth/webmasters"]
+            )
+            creds.refresh(Request())
+            es = urllib.parse.quote(site_url, safe="")
+            esm = urllib.parse.quote(site_url.rstrip("/") + "/sitemap.xml", safe="")
+            async with httpx.AsyncClient(timeout=8.0) as gc:
+                resp = await gc.put(
+                    f"https://www.googleapis.com/webmasters/v3/sites/{es}/sitemaps/{esm}",
+                    headers={"Authorization": f"Bearer {creds.token}"}
+                )
+                return resp.status_code
+        except Exception:
+            return None
 
     async def _extract_article(self, client: httpx.AsyncClient, url: str, fallback_desc: str) -> Tuple[str, Optional[str]]:
         body_paragraphs: List[str] = []
@@ -173,7 +216,7 @@ class NewsAutopilotEngine:
         ]
         return f"{clean_title} — Latest Report", "\n".join(html_parts)
 
-    async def run_cycle(self, max_posts: int = 1) -> Dict[str, Any]:
+    async def run_cycle(self, max_posts: int = 3) -> Dict[str, Any]:
         """Fetches latest RSS news, skips already-posted items, rephrases, modifies image, and publishes to Blogger."""
         from backend.gateway.blogger_syndicator import blogger_syndicator
 
@@ -241,10 +284,15 @@ class NewsAutopilotEngine:
                     })
                     existing_titles.append(_normalize_title(new_title))
 
+            gsc_sitemap_status = None
+            if published:
+                gsc_sitemap_status = await self._ping_gsc_sitemap("https://sunnyjaiswalblogs.blogspot.com/")
+
             return {
                 "success": True,
                 "rss_scanned": len(rss_items),
                 "published_count": len(published),
+                "gsc_sitemap_put": gsc_sitemap_status,
                 "published": published,
             }
 

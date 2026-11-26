@@ -633,7 +633,7 @@ async def blogger_syndicate_endpoint(req: BloggerSyndicateRequest):
     )
 
 @app.api_route("/api/cron/news-autopilot", methods=["GET", "POST"])
-async def news_autopilot_cron_endpoint(max_posts: int = Query(1, ge=1, le=5)):
+async def news_autopilot_cron_endpoint(max_posts: int = Query(3, ge=1, le=15)):
     """24/7 Cloud News-to-Blogger Autopilot (AajTak, ABP, Google News RSS -> Rephrase -> Image Modify -> Blogger -> WebSub -> GCP Indexing API)."""
     return await news_autopilot.run_cycle(max_posts=max_posts)
 
