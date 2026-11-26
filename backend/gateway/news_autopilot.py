@@ -69,6 +69,36 @@ class NewsAutopilotEngine:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
             "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
         }
+        self.history_file = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "logs",
+            "posted_news_urls.json",
+        )
+
+    def _load_posted_links(self) -> set:
+        import tempfile
+        for p in (self.history_file, os.path.join(tempfile.gettempdir(), "posted_news_urls.json")):
+            if os.path.isfile(p):
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    if isinstance(data, list):
+                        return set(data[-500:])
+                except Exception:
+                    pass
+        return set()
+
+    def _save_posted_links(self, links: set) -> None:
+        import tempfile
+        recent = list(links)[-500:]
+        for p in (self.history_file, os.path.join(tempfile.gettempdir(), "posted_news_urls.json")):
+            try:
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                with open(p, "w", encoding="utf-8") as f:
+                    json.dump(recent, f)
+                return
+            except Exception:
+                continue
 
     async def _fetch_existing_titles(self, client: httpx.AsyncClient) -> List[str]:
         try:
@@ -300,11 +330,14 @@ class NewsAutopilotEngine:
                 self._fetch_existing_titles(client),
                 self._fetch_rss_items(client),
             )
+            posted_links = self._load_posted_links()
 
             published: List[Dict[str, Any]] = []
             for item in rss_items:
                 if len(published) >= max_posts:
                     break
+                if item["link"] in posted_links:
+                    continue
                 norm = _normalize_title(item["title"])
                 if not norm or any(norm[:32] in ex or ex[:32] in norm for ex in existing_titles if ex):
                     continue
@@ -356,6 +389,10 @@ class NewsAutopilotEngine:
                     })
                     existing_titles.append(_normalize_title(item["title"]))
                     existing_titles.append(_normalize_title(new_title))
+                    posted_links.add(item["link"])
+
+            if published:
+                self._save_posted_links(posted_links)
 
             gsc_sitemap_status = None
             if published:
