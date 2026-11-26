@@ -170,12 +170,22 @@ class BloggerSyndicator:
                 except Exception:
                     pass
 
+            gcp_status = None
+            if post_url:
+                try:
+                    from backend.gateway.gcp_service_account_rotator import gcp_rotator
+                    gcp_res = await gcp_rotator.submit_url(post_url, "URL_UPDATED")
+                    gcp_status = gcp_res.get("status")
+                except Exception:
+                    pass
+
             return {
                 "success": True,
                 "status": "PUBLISHED_TO_BLOGGER",
                 "post_id": post_data.get("id"),
                 "post_url": post_url,
                 "websub_ping_status": websub_status,
+                "gcp_indexing_api_status": gcp_status,
                 "urls_linked": len(urls),
             }
 
