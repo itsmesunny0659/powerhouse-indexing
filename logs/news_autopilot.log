@@ -306,3 +306,16 @@
 2026-11-27 01:36:14,236 [INFO] HTTP Request: POST https://pubsubhubbub.appspot.com/publish "HTTP/1.1 204 No Content"
 2026-11-27 01:36:15,792 [INFO] [GCP Rotator] Loaded 13 service accounts.
 2026-11-27 01:36:19,030 [INFO] HTTP Request: GET https://www.abplive.com/news/india/cjp-save-democracy-save-constitution-program-in-nagpur-ashutosh-ranka-video-abhijeet-dipke-3219496 "HTTP/1.1 200 OK"
+2026-11-27 01:36:30,226 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-11-27 01:36:30,966 [INFO] HTTP Request: GET https://feeds.abplive.com/onecms/images/uploaded-images/2026/11/26/934c6164970c6671f4e8260b31b7031917956682496931200_original.jpg?impolicy=abp_cdn&imwidth=1200 "HTTP/1.1 200 OK"
+2026-11-27 01:36:31,147 [INFO] HTTP Request: POST https://oauth2.googleapis.com/token "HTTP/1.1 200 OK"
+2026-11-27 01:36:33,162 [INFO] HTTP Request: POST https://www.googleapis.com/blogger/v3/blogs/5345677942326508538/posts/ "HTTP/1.1 200 OK"
+2026-11-27 01:36:35,446 [INFO] HTTP Request: POST https://pubsubhubbub.appspot.com/publish "HTTP/1.1 204 No Content"
+2026-11-27 01:36:39,257 [INFO] HTTP Request: GET https://www.today.com/video/thanksgiving-travelers-face-long-airport-lines-and-packed-roads-274224197586 "HTTP/1.1 200 OK"
+2026-11-27 01:36:51,913 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-11-27 01:36:52,001 [INFO] HTTP Request: GET https://media-cldnry.s-nbcnews.com/image/upload/t_social_share_1200x630_center,f_auto,q_auto:best/mpx/2704722219/2026_11/orlando_airpor-3tgrb4.jpg "HTTP/1.1 200 OK"
+2026-11-27 01:36:52,262 [INFO] HTTP Request: POST https://oauth2.googleapis.com/token "HTTP/1.1 200 OK"
+2026-11-27 01:36:54,673 [INFO] HTTP Request: POST https://www.googleapis.com/blogger/v3/blogs/5345677942326508538/posts/ "HTTP/1.1 200 OK"
+2026-11-27 01:36:56,327 [INFO] HTTP Request: POST https://pubsubhubbub.appspot.com/publish "HTTP/1.1 204 No Content"
+2026-11-27 01:37:02,784 [INFO] HTTP Request: PUT https://www.googleapis.com/webmasters/v3/sites/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2F/sitemaps/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2Fsitemap.xml "HTTP/1.1 204 No Content"
+2026-11-27 01:37:02,790 [INFO] Cycle result: {"success": true, "rss_scanned": 40, "published_count": 3, "gsc_sitemap_put": 204, "published": [{"source": "ABP News", "title": "Mumbai Police Escalate Action Against CJP Leaders with Lookout Circulars; Travel Ban Challenged in High Court", "post_url": "https://sunnyjaiswalblogs.blogspot.com/2026/11/mumbai-police-escalate-action-against.html", "image_modified": true, "gcp_indexing_api": 200}, {"source": "ABP Hindi", "title": "डिजिटल सेंसरशिप के खिलाफ CJP का नागपुर में शंखनाद: संविधान बचाने के लिए आशुतोष रांका ने देशवासियों से की खास अपील", "post_url": "https://sunnyjaiswalblogs.blogspot.com/2026/11/cjp.html", "image_modified": true, "gcp_indexing_api": 200}, {"source": "NBC News", "title": "Holiday Transit Crisis: Severe Weather and Record Volumes Paralyze Thanksgiving Travel", "post_url": "https://sunnyjaiswalblogs.blogspot.com/2026/11/holiday-transit-crisis-severe-weather.html", "image_modified": true, "gcp_indexing_api": 200}]}
