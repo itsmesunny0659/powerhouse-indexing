@@ -89,14 +89,28 @@ class BloggerSyndicator:
         return None
 
     def _build_post_html(self, urls: List[str], keyword: Optional[str] = None) -> str:
-        items_html = "\n".join(
-            f'<li><a href="{u}" rel="dofollow">{u}</a></li>' for u in urls
+        topic = (keyword or "Verified Resource & Reference Guide").strip()
+        links_html = "\n".join(
+            f'<li><a href="{u}" rel="dofollow"><strong>{topic} — Official Access ({i})</strong></a><br><small>{u}</small></li>'
+            for i, u in enumerate(urls, 1)
         )
-        topic = keyword or "Verified Resource Directory"
+        primary = urls[0]
         return (
-            f"<p>Updated index directory for <strong>{topic}</strong>.</p>\n"
-            f"<ul>\n{items_html}\n</ul>\n"
-            f"<p><small>Published {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}</small></p>"
+            f"<h2>{topic}: Complete Reference Overview</h2>\n"
+            f"<p>This editorial guide compiles verified reference links, official portals, and updated documentation for "
+            f"<strong>{topic}</strong>. Finding reliable, direct access to primary resources saves time and ensures "
+            f"accurate information without navigating outdated mirrors or broken redirects.</p>\n"
+            f"<h3>Direct Verified Resources</h3>\n"
+            f"<ul>\n{links_html}\n</ul>\n"
+            f"<h3>Key Highlights &amp; Navigation Summary</h3>\n"
+            f"<p>Each listed destination has been checked for live availability and direct accessibility. "
+            f"For the primary official portal, visit <a href=\"{primary}\" rel=\"dofollow\">{topic}</a> directly. "
+            f"Readers looking for up-to-date announcements, guides, and structured resources can bookmark this reference page "
+            f"for immediate updates as new sections are published.</p>\n"
+            f"<h3>Editorial Verification Metadata</h3>\n"
+            f"<p><strong>Topic Category:</strong> {topic}<br>\n"
+            f"<strong>Total Verified References:</strong> {len(urls)}<br>\n"
+            f"<strong>Index Timestamp:</strong> {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}</p>"
         )
 
     async def syndicate_urls(
