@@ -25,9 +25,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("news_daemon")
 
-INTERVAL_SECONDS = 600
+INTERVAL_SECONDS = 900
 MAX_POSTS_PER_CYCLE = 1
-DAILY_POST_CAP = 50
+DAILY_POST_CAP = 90
 DAILY_COUNTER_FILE = "logs/daily_post_count.json"
 
 
