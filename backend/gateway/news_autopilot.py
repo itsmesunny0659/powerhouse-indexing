@@ -213,10 +213,10 @@ class NewsAutopilotEngine:
                     f"Original Headline: {clean_title}\nSource Details: {body[:3500]}"
                 )
                 gr = await client.post(
-                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
                     headers={"x-goog-api-key": gemini_key, "Content-Type": "application/json"},
                     json={"contents": [{"parts": [{"text": prompt}]}]},
-                    timeout=20.0,
+                    timeout=35.0,
                 )
                 if gr.status_code == 200:
                     raw = gr.json()["candidates"][0]["content"]["parts"][0]["text"]
