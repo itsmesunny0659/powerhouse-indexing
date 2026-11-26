@@ -103,8 +103,17 @@ class GCPIndexingRotator:
             except Exception as e:
                 logger.error(f"[GCP Rotator] Failed to decompress vault keys: {e}")
 
-        # Prioritize verified working Search Console owner accounts (instantreelsdownload, myindexingtool005, myindexingtool004)
-        self.account_pool.sort(key=lambda a: 0 if any(x in a.get("email", "") for x in ("instantreelsdownload", "myindexingtool005", "myindexingtool004")) else 1)
+        # Prioritize myindexingtool004 first (all APIs enabled), then other verified Search Console owner accounts
+        def _priority_key(acc):
+            email = acc.get("email", "")
+            if "myindexingtool004" in email:
+                return 0
+            if "myindexingtool005" in email:
+                return 1
+            if "instantreelsdownload" in email:
+                return 2
+            return 3
+        self.account_pool.sort(key=_priority_key)
 
         logger.info(f"[GCP Rotator] Loaded {len(self.account_pool)} service accounts.")
 
