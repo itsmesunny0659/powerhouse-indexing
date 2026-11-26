@@ -800,9 +800,10 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
         indexing_api_targets.append(clean_gsite)
         gateway_urls.insert(0, clean_gsite)
 
-    for g_u, n_u, raw_u in zip(gateway_urls, news_urls, clean_urls):
+    for raw_u in clean_urls:
+        # 1 URL = 1 GCP Indexing API credit (clean /go/ 301 relay only; skip raw external URLs that 403)
         go_u = f"{base_url}/go/{gateway_shell.encode_url_id(raw_u)}"
-        indexing_api_targets.extend([go_u, g_u, n_u, raw_u])
+        indexing_api_targets.append(go_u)
 
     summoner = GooglebotSummoner()
 
@@ -810,12 +811,10 @@ async def master_instant_index_endpoint(req: MasterInstantIndexRequest, bg_tasks
     async def run_gcp_indexing():
         return await gcp_rotator.submit_batch(indexing_api_targets)
 
-    # Vector 2: Priority 0 Googlebot Summoner (search.google.com/test/rich-results + Google Docs + WRS)
+    # Vector 2: Priority 0 Googlebot Summoner (1 URL = 1 WRS credit)
     async def run_googlebot_summoner():
         results = []
-        # Dispatch Googlebot Summoner on BOTH the user's raw target URLs AND the verified gateway shells!
-        all_summon_targets = clean_urls[:5] + gateway_urls[:3]
-        for target in all_summon_targets:
+        for target in clean_urls[:5]:
             try:
                 res = await summoner.execute_rocket_pipeline(target)
                 results.append(res)
