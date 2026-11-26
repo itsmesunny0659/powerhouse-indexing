@@ -68,8 +68,6 @@ class BloggerSyndicator:
         return cfg
 
     async def _refresh_access_token(self, client: httpx.AsyncClient, cfg: Dict[str, Optional[str]]) -> Optional[str]:
-        if cfg.get("oauth_token"):
-            return cfg["oauth_token"]
         if cfg.get("refresh_token") and cfg.get("client_id") and cfg.get("client_secret"):
             try:
                 resp = await client.post(
@@ -86,6 +84,8 @@ class BloggerSyndicator:
                     return resp.json().get("access_token")
             except Exception as e:
                 logger.error(f"[Blogger] Token refresh failed: {e}")
+        if cfg.get("oauth_token"):
+            return cfg["oauth_token"]
         return None
 
     def _build_post_html(self, urls: List[str], keyword: Optional[str] = None) -> str:
