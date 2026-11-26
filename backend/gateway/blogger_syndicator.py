@@ -4,10 +4,12 @@ Publishes clean static HTML directory posts via Blogger API v3 and immediately
 pings Google's PubSubHubbub hub on the blog's Atom feed for fast Googlebot discovery.
 """
 
+import base64
 import json
 import logging
 import os
 import time
+import zlib
 from typing import Any, Dict, List, Optional
 import httpx
 
@@ -44,6 +46,25 @@ class BloggerSyndicator:
                             cfg[k] = v
             except Exception as e:
                 logger.error(f"[Blogger] Failed to read {self.config_path}: {e}")
+
+        vault_candidates = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "blogger_vault.dat"),
+            "data/blogger_vault.dat",
+        ]
+        for vp in vault_candidates:
+            if os.path.isfile(vp):
+                try:
+                    with open(vp, "r", encoding="utf-8") as vf:
+                        raw = vf.read().strip()
+                    if raw:
+                        v_cfg = json.loads(zlib.decompress(base64.b64decode(raw.encode("ascii"))))
+                        if isinstance(v_cfg, dict):
+                            for k, v in v_cfg.items():
+                                if not cfg.get(k) and v:
+                                    cfg[k] = v
+                        break
+                except Exception as e:
+                    logger.error(f"[Blogger] Failed to load {vp}: {e}")
         return cfg
 
     async def _refresh_access_token(self, client: httpx.AsyncClient, cfg: Dict[str, Optional[str]]) -> Optional[str]:
