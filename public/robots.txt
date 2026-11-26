@@ -1,7 +1,11 @@
 User-agent: *
 Allow: /
-Allow: /news/
 Allow: /i/
+Allow: /news/
+Allow: /go/
+Allow: /directory
+Allow: /sitemap.html
 
 Sitemap: https://powerhouse-indexing-zvxh.vercel.app/sitemap.xml
 Sitemap: https://powerhouse-indexing-zvxh.vercel.app/news-sitemap.xml
+Sitemap: https://powerhouse-indexing-zvxh.vercel.app/atom.xml

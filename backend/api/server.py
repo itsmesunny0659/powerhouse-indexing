@@ -357,6 +357,68 @@ async def get_news_sitemap():
     xml_content = google_news_engine.generate_google_news_sitemap_xml(sample_news)
     return Response(content=xml_content, media_type="application/xml")
 
+@app.get("/directory")
+async def serve_directory_hub():
+    """Priority Web Directory Hub listing active submitted gateway links."""
+    items_html = "".join(
+        f'<li><a href="{it["url"]}" rel="dofollow">{it["title"]}</a> &rarr; <a href="{it.get("target_canonical", it["url"])}" rel="dofollow">{it.get("target_canonical", it["url"])}</a></li>'
+        for it in active_news_items[:50]
+    ) or '<li><a href="https://powerhouse-indexing-zvxh.vercel.app/">ApexSearch Home</a></li>'
+    html = (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+        '<title>Priority Web Directory Hub - ApexSearch</title>'
+        '<meta name="robots" content="index, follow"></head>'
+        '<body style="font-family:sans-serif;background:#07080b;color:#f8fafc;padding:40px;max-width:900px;margin:0 auto;">'
+        '<h1>Priority Web Directory Hub</h1>'
+        f'<ul>{items_html}</ul></body></html>'
+    )
+    return HTMLResponse(content=html)
+
+@app.get("/sitemap.html")
+async def serve_html_sitemap():
+    """HTML Sitemap for crawler discovery."""
+    links_html = "".join(
+        f'<li><a href="{it["url"]}">{it["title"]}</a></li>'
+        for it in active_news_items[:100]
+    ) or '<li><a href="https://powerhouse-indexing-zvxh.vercel.app/">ApexSearch Home</a></li>'
+    html = (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+        '<title>HTML Sitemap - ApexSearch</title>'
+        '<meta name="robots" content="index, follow"></head>'
+        '<body style="font-family:sans-serif;background:#0a0b10;color:#fff;padding:40px;">'
+        f'<h2>HTML Sitemap ({len(active_news_items)} Links)</h2><ul>{links_html}</ul></body></html>'
+    )
+    return HTMLResponse(content=html)
+
+@app.get("/atom.xml")
+async def serve_atom_feed():
+    """Atom 1.0 Syndication Feed."""
+    updated = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    entries = "".join(
+        f'<entry><title>{it["title"]}</title><link href="{it["url"]}"/><id>{it["url"]}</id><updated>{it.get("published_at", updated)}</updated></entry>'
+        for it in active_news_items[:30]
+    )
+    xml = (
+        '<?xml version="1.0" encoding="utf-8"?>'
+        '<feed xmlns="http://www.w3.org/2005/Atom">'
+        '<title>ApexSearch Atom Feed</title>'
+        '<link href="https://powerhouse-indexing-zvxh.vercel.app/"/>'
+        f'<updated>{updated}</updated>'
+        '<id>https://powerhouse-indexing-zvxh.vercel.app/</id>'
+        f'{entries}</feed>'
+    )
+    return Response(content=xml, media_type="application/atom+xml")
+
+@app.get("/target-sitemap.xml")
+async def serve_target_sitemap():
+    """Dynamic XML Sitemap of active relay URLs."""
+    urls_xml = "".join(
+        f'<url><loc>{it["url"]}</loc><changefreq>always</changefreq><priority>0.9</priority></url>'
+        for it in active_news_items[:100]
+    )
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls_xml}</urlset>'
+    return Response(content=xml, media_type="application/xml")
+
 @app.get("/news/{url_id}")
 async def serve_news_gateway(url_id: str):
     """

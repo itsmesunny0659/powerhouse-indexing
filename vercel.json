@@ -15,6 +15,22 @@
     {
       "source": "/go/(.*)",
       "destination": "/api/index.py"
+    },
+    {
+      "source": "/directory",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/sitemap.html",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/atom.xml",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/target-sitemap.xml",
+      "destination": "/api/index.py"
     }
   ]
 }
