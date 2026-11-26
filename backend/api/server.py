@@ -344,18 +344,30 @@ active_news_items = []
 @app.get("/news-sitemap.xml")
 async def get_news_sitemap():
     """
-    Official Google News XML Sitemap:
-    Conforms to http://www.google.com/schemas/sitemap-news/0.9
-    Googlebot-News prioritizes this sitemap over regular sitemaps.
+    Official Live Google News XML Sitemap:
+    Pulls latest 40 posts from 24hrsNewsOnline (sunnyjaiswalblogs.blogspot.com) + active wire items.
     """
-    sample_news = active_news_items if active_news_items else [
-        {
-            "url": "https://powerhouse-indexing-zvxh.vercel.app/news/u_live_wire",
-            "title": "Global Breaking News Wire: Priority Search Ingestion Active",
+    import httpx as _httpx
+    news_items = list(active_news_items)
+    try:
+        async with _httpx.AsyncClient(timeout=8.0) as _c:
+            r = await _c.get("https://sunnyjaiswalblogs.blogspot.com/feeds/posts/default?alt=json&max-results=40")
+            if r.status_code == 200:
+                for entry in r.json().get("feed", {}).get("entry", []):
+                    alt_url = next((l["href"] for l in entry.get("link", []) if l.get("rel") == "alternate"), "")
+                    title = entry.get("title", {}).get("$t", "") or "24hrsNewsOnline Breaking Update"
+                    pub = entry.get("published", {}).get("$t", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+                    if alt_url:
+                        news_items.append({"url": alt_url, "title": title, "published_at": pub})
+    except Exception:
+        pass
+    if not news_items:
+        news_items = [{
+            "url": "https://sunnyjaiswalblogs.blogspot.com/",
+            "title": "24hrsNewsOnline — Live Breaking News Wire",
             "published_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        }
-    ]
-    xml_content = google_news_engine.generate_google_news_sitemap_xml(sample_news)
+        }]
+    xml_content = google_news_engine.generate_google_news_sitemap_xml(news_items)
     return Response(content=xml_content, media_type="application/xml")
 
 @app.get("/directory")
