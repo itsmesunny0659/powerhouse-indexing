@@ -312,13 +312,17 @@ class NewsAutopilotEngine:
             )
             creds.refresh(Request())
             es = urllib.parse.quote(site_url, safe="")
-            esm = urllib.parse.quote(site_url.rstrip("/") + "/sitemap.xml", safe="")
+            base = site_url.rstrip("/")
+            last_code = None
             async with httpx.AsyncClient(timeout=8.0) as gc:
-                resp = await gc.put(
-                    f"https://www.googleapis.com/webmasters/v3/sites/{es}/sitemaps/{esm}",
-                    headers={"Authorization": f"Bearer {creds.token}"}
-                )
-                return resp.status_code
+                for path in ("/sitemap.xml", "/rss.xml", "/atom.xml"):
+                    esm = urllib.parse.quote(base + path, safe="")
+                    resp = await gc.put(
+                        f"https://www.googleapis.com/webmasters/v3/sites/{es}/sitemaps/{esm}",
+                        headers={"Authorization": f"Bearer {creds.token}"}
+                    )
+                    last_code = resp.status_code
+            return last_code
         except Exception:
             return None
 
