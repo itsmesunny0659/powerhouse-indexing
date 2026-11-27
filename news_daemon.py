@@ -9,7 +9,9 @@ import json
 import logging
 import os
 import sys
-import time
+from datetime import datetime, timedelta, timezone
+
+IST_TZ = timezone(timedelta(hours=5, minutes=30))
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from backend.gateway.news_autopilot import news_autopilot
@@ -32,7 +34,7 @@ DAILY_COUNTER_FILE = "logs/daily_post_count.json"
 
 
 def _get_today_count() -> int:
-    today = time.strftime("%Y-%m-%d", time.gmtime())
+    today = datetime.now(IST_TZ).strftime("%Y-%m-%d")
     if os.path.isfile(DAILY_COUNTER_FILE):
         try:
             with open(DAILY_COUNTER_FILE, "r", encoding="utf-8") as f:
@@ -45,7 +47,7 @@ def _get_today_count() -> int:
 
 
 def _increment_today_count(added: int) -> int:
-    today = time.strftime("%Y-%m-%d", time.gmtime())
+    today = datetime.now(IST_TZ).strftime("%Y-%m-%d")
     total = _get_today_count() + added
     try:
         with open(DAILY_COUNTER_FILE, "w", encoding="utf-8") as f:

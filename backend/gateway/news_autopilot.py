@@ -17,9 +17,16 @@ import os
 import re
 import time
 import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
 from bs4 import BeautifulSoup
+
+IST_TZ = timezone(timedelta(hours=5, minutes=30))
+
+
+def _ist_now_str(fmt: str = "%d %b %Y, %I:%M %p IST") -> str:
+    return datetime.now(IST_TZ).strftime(fmt)
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +269,7 @@ class NewsAutopilotEngine:
                                 html_parts.append(f"<h3>{sec['heading']}</h3>")
                             if sec.get("body"):
                                 html_parts.append(f"<p>{sec['body']}</p>")
-                        html_parts.append(f"<p><small>24hrsNewsOnline Editorial Desk &bull; {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}</small></p>")
+                        html_parts.append(f"<p><small>24hrsNewsOnline Editorial Desk &bull; {_ist_now_str()}</small></p>")
                         return new_h, "\n".join(html_parts)
             except Exception as e:
                 logger.warning(f"[NewsAutopilot] Gemini rephrase fallback: {e}")
@@ -282,7 +289,7 @@ class NewsAutopilotEngine:
                 "<h3>प्रमुख बिंदु और विश्लेषण</h3>",
                 f"<p>ताज़ा मीडिया रिपोर्ट्स और आधिकारिक अपडेट्स के अनुसार यह विषय इस समय चर्चा में है। पाठकों को सटीक और तेज़ जानकारी उपलब्ध कराने के लिए इस खबर के सभी महत्वपूर्ण पहलुओं को यहाँ संकलित किया गया है।</p>",
                 *[f"<p>{p}</p>" for p in paras[4:7]],
-                f"<p><small>24hrsNewsOnline Desk &bull; Public News Dispatch Summary &bull; {time.strftime('%d %b %Y, %H:%M UTC', time.gmtime())}</small></p>",
+                f"<p><small>24hrsNewsOnline Desk &bull; Public News Dispatch Summary &bull; {_ist_now_str()}</small></p>",
             ]
         else:
             rephrased_title = f"Developing Story: {clean_title} | Key Updates & Full Breakdown"
@@ -293,7 +300,7 @@ class NewsAutopilotEngine:
                 "<h3>Broader Context &amp; Takeaways</h3>",
                 "<p>Following recent public dispatches and ongoing coverage, observers and stakeholders are closely monitoring further official announcements on this development. Below are additional details gathered around this report.</p>",
                 *[f"<p>{p}</p>" for p in paras[4:7]],
-                f"<p><small>24hrsNewsOnline Editorial Desk &bull; Compiled Report &bull; {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}</small></p>",
+                f"<p><small>24hrsNewsOnline Editorial Desk &bull; Compiled Report &bull; {_ist_now_str()}</small></p>",
             ]
         return rephrased_title, "\n".join(html_parts)
 
