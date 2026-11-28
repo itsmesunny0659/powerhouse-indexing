@@ -94,4 +94,3 @@ async def inferno_index(
             else {"error": str(index_result)}
         ),
     }
-```
