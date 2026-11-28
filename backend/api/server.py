@@ -649,6 +649,23 @@ async def news_autopilot_cron_endpoint(max_posts: int = Query(3, ge=1, le=15)):
     """24/7 Cloud News-to-Blogger Autopilot (AajTak, ABP, Google News RSS -> Rephrase -> Image Modify -> Blogger -> WebSub -> GCP Indexing API)."""
     return await news_autopilot.run_cycle(max_posts=max_posts)
 
+class InfernoIndexRequest(BaseModel):
+    url: str
+    headline: str = "Breaking: Verified Page Update"
+    oauth_key: Optional[str] = None
+    write_local_feeds: bool = False
+
+@app.post("/api/gateway/inferno")
+async def inferno_index_endpoint(req: InfernoIndexRequest):
+    """Runs the unified Inferno Indexing Pipeline (JSON-LD Schema + Politemap/RSS + Multi-Ping + Google Indexing API v3)."""
+    from backend.gateway.inferno import inferno_index
+    return await inferno_index(
+        url=req.url,
+        headline=req.headline,
+        oauth_key=req.oauth_key,
+        write_local_feeds=req.write_local_feeds,
+    )
+
 class TrafficEmulationRequest(BaseModel):
     url: str
 
