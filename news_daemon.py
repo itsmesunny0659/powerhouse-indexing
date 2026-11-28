@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import os
+import random
 import sys
 from datetime import datetime, timedelta, timezone
 
@@ -27,7 +28,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("news_daemon")
 
-INTERVAL_SECONDS = 1200
+MIN_INTERVAL_SECONDS = 900   # 15 minutes
+MAX_INTERVAL_SECONDS = 1200  # 20 minutes
 MAX_POSTS_PER_CYCLE = 1
 DAILY_POST_CAP = 90
 DAILY_COUNTER_FILE = "logs/daily_post_count.json"
@@ -59,8 +61,9 @@ def _increment_today_count(added: int) -> int:
 
 async def run_forever() -> None:
     logger.info(
-        "Starting Safe 24/7 News Autopilot Daemon (interval=%ss, max_posts=%s, daily_cap=%s)",
-        INTERVAL_SECONDS,
+        "Starting Safe 24/7 News Autopilot Daemon (interval=%s-%ss, max_posts=%s, daily_cap=%s)",
+        MIN_INTERVAL_SECONDS,
+        MAX_INTERVAL_SECONDS,
         MAX_POSTS_PER_CYCLE,
         DAILY_POST_CAP,
     )
@@ -68,7 +71,7 @@ async def run_forever() -> None:
         try:
             current = _get_today_count()
             if current >= DAILY_POST_CAP:
-                logger.info("Daily safe cap reached (%s/%s). Sleeping until next UTC day.", current, DAILY_POST_CAP)
+                logger.info("Daily safe cap reached (%s/%s). Sleeping until next IST day.", current, DAILY_POST_CAP)
             else:
                 res = await news_autopilot.run_cycle(max_posts=MAX_POSTS_PER_CYCLE)
                 posted = int(res.get("published_count", 0))
@@ -77,7 +80,9 @@ async def run_forever() -> None:
                 logger.info("Cycle result (daily=%s/%s): %s", current, DAILY_POST_CAP, json.dumps(res, ensure_ascii=False))
         except Exception as exc:
             logger.error("Cycle failed: %s", exc)
-        await asyncio.sleep(INTERVAL_SECONDS)
+        wait_secs = random.randint(MIN_INTERVAL_SECONDS, MAX_INTERVAL_SECONDS)
+        logger.info("Next cycle in %ss (%.1f min)", wait_secs, wait_secs / 60.0)
+        await asyncio.sleep(wait_secs)
 
 
 if __name__ == "__main__":

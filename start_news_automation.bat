@@ -3,7 +3,7 @@ title 24hrsNewsOnline - News Autopilot Daemon
 cd /d "%~dp0"
 
 echo ==================================================
-echo   24hrsNewsOnline News Autopilot (20m / 90-day)
+echo   24hrsNewsOnline News Autopilot (15-20m / 90-day)
 echo ==================================================
 echo.
 
