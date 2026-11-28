@@ -1696,3 +1696,23 @@
 2026-11-28 13:31:23,294 [INFO] HTTP Request: PUT https://www.googleapis.com/webmasters/v3/sites/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2F/sitemaps/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2Fatom.xml "HTTP/1.1 204 No Content"
 2026-11-28 13:31:23,302 [INFO] Cycle result (daily=40/90): {"success": true, "rss_scanned": 40, "published_count": 1, "gsc_sitemap_put": 204, "published": [{"source": "AajTak", "title": "सीम और स्विंग के चक्रव्यूह में फंसी टीम इंडिया: क्राइस्टचर्च में उजागर हुई भारतीय बल्लेबाजी की तकनीकी खामियां", "post_url": "https://sunnyjaiswalblogs.blogspot.com/2026/11/blog-post_28.html", "image_modified": true, "gcp_indexing_api": 200}]}
 2026-11-28 13:31:23,302 [INFO] Next cycle in 1058s (17.6 min)
+2026-11-28 13:49:02,602 [INFO] HTTP Request: GET https://indianexpress.com/section/india/feed/ "HTTP/1.1 200 OK"
+2026-11-28 13:49:02,610 [INFO] HTTP Request: GET https://www.abplive.com/home/feed "HTTP/1.1 200 OK"
+2026-11-28 13:49:02,654 [INFO] HTTP Request: GET https://www.aajtak.in/rssfeeds/?id=home "HTTP/1.1 200 OK"
+2026-11-28 13:49:02,660 [INFO] HTTP Request: GET https://www.indiatoday.in/rss/home "HTTP/1.1 200 OK"
+2026-11-28 13:49:02,786 [INFO] HTTP Request: GET https://feeds.nbcnews.com/nbcnews/public/news "HTTP/1.1 200 OK"
+2026-11-28 13:49:02,804 [INFO] HTTP Request: GET https://feeds.nbcnews.com/nbcnews/public/world "HTTP/1.1 200 OK"
+2026-11-28 13:49:03,363 [INFO] HTTP Request: GET https://news.abplive.com/news/india/feed "HTTP/1.1 200 OK"
+2026-11-28 13:49:04,305 [INFO] HTTP Request: GET https://feeds.feedburner.com/ndtvnews-top-stories "HTTP/1.1 200 OK"
+2026-11-28 13:49:04,732 [INFO] HTTP Request: GET https://sunnyjaiswalblogs.blogspot.com/feeds/posts/default?alt=json&max-results=50 "HTTP/1.1 200 OK"
+2026-11-28 13:49:06,491 [INFO] HTTP Request: GET https://www.aajtak.in/india/news/story/india-alliance-parliament-special-session-delimitation-women-reservation-bill-discussion-ntc-acwi-dskc-2708568-2026-11-28?utm_source=rssfeed "HTTP/1.1 200 OK"
+2026-11-28 13:49:19,262 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent "HTTP/1.1 200 OK"
+2026-11-28 13:49:19,327 [INFO] HTTP Request: GET https://akm-img-a-in.tosshub.com/aajtak/images/story/202611/6b0a8bef18bca-mallikarjun-kharge-280814387-16x9.png "HTTP/1.1 200 OK"
+2026-11-28 13:49:19,758 [INFO] HTTP Request: POST https://oauth2.googleapis.com/token "HTTP/1.1 200 OK"
+2026-11-28 13:49:21,907 [INFO] HTTP Request: POST https://www.googleapis.com/blogger/v3/blogs/5345677942326508538/posts/ "HTTP/1.1 200 OK"
+2026-11-28 13:49:23,042 [INFO] HTTP Request: POST https://pubsubhubbub.appspot.com/publish "HTTP/1.1 204 No Content"
+2026-11-28 13:49:27,667 [INFO] HTTP Request: PUT https://www.googleapis.com/webmasters/v3/sites/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2F/sitemaps/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2Fsitemap.xml "HTTP/1.1 204 No Content"
+2026-11-28 13:49:28,036 [INFO] HTTP Request: PUT https://www.googleapis.com/webmasters/v3/sites/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2F/sitemaps/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2Frss.xml "HTTP/1.1 204 No Content"
+2026-11-28 13:49:28,545 [INFO] HTTP Request: PUT https://www.googleapis.com/webmasters/v3/sites/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2F/sitemaps/https%3A%2F%2Fsunnyjaiswalblogs.blogspot.com%2Fatom.xml "HTTP/1.1 204 No Content"
+2026-11-28 13:49:28,552 [INFO] Cycle result (daily=41/90): {"success": true, "rss_scanned": 40, "published_count": 1, "gsc_sitemap_put": 204, "published": [{"source": "AajTak", "title": "विपक्षी एकजुटता और केंद्र की घेराबंदी: मल्लिकार्जुन खड़गे ने परिसीमन बिल को बताया लोकतांत्रिक मूल्यों पर प्रहार", "post_url": "https://sunnyjaiswalblogs.blogspot.com/2026/11/blog-post_247.html", "image_modified": true, "gcp_indexing_api": 200}]}
+2026-11-28 13:49:28,554 [INFO] Next cycle in 1133s (18.9 min)
